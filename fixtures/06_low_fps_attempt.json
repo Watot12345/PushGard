@@ -1,0 +1,25 @@
+{
+  "fixture_id": "06_low_fps_attempt",
+  "description": "Hand-derived attempt sampled at 10.0 Hz (100ms intervals), below min_acceptable_fps (20.0 Hz). Must be rejected at the attempt level with LOW_FPS.",
+  "float_tolerance_degrees": 1.0,
+  "expected": {
+    "attempt_valid": false,
+    "attempt_reject_reason": "LOW_FPS",
+    "valid_rep_count": 0,
+    "rejected_rep_count": 0,
+    "reps": []
+  },
+  "samples": [
+    [0, 165.0, 5.0, 0.92],
+    [100, 165.0, 5.0, 0.92],
+    [200, 130.0, 6.0, 0.90],
+    [300, 80.0, 7.0, 0.88],
+    [400, 80.0, 7.0, 0.88],
+    [500, 80.0, 7.0, 0.88],
+    [600, 120.0, 6.0, 0.90],
+    [700, 165.0, 5.0, 0.92],
+    [800, 165.0, 5.0, 0.92],
+    [900, 165.0, 5.0, 0.92],
+    [1000, 165.0, 5.0, 0.92]
+  ]
+}

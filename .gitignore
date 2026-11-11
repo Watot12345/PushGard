@@ -1,0 +1,31 @@
+# Root build & release staging
+dist/
+*.log
+.DS_Store
+
+# Flutter / Dart build artifacts
+mobile/build/
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/pubspec.lock
+
+# Android / Gradle local artifacts
+mobile/android/.gradle/
+mobile/android/captures/
+mobile/android/local.properties
+mobile/android/key.properties
+*.jks
+*.keystore
+
+# iOS / macOS / Linux / Windows build artifacts
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/macos/Pods/
+
+# Server local environment
+server/.env
+server/vendor/
+server/node_modules/
+server/storage/*.key

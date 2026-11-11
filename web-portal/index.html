@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PushGard — Beta Release &amp; Live Web Arena</title>
+  <meta name="description" content="PushGard — Defend Your EGO. 1v1 Head-to-Head Push-Up Battles with Tug-of-War KO &amp; Win/Loss Elo Ranking." />
+  <meta name="theme-color" content="#0B0B0F" />
+  <link rel="icon" type="image/png" href="app/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@700;800&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-carbon: #0B0B0F;
+      --card-slate: #1B1A26;
+      --card-elevated: #252433;
+      --volt-lime: #D4FF2A;
+      --olive-chevron: #6E7F29;
+      --coral-fix: #FF8A7A;
+      --text-white: #FFFFFF;
+      --text-muted: #A3A5B5;
+      --text-dim: #6C6E7E;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-carbon);
+      color: var(--text-white);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px 24px 64px;
+    }
+
+    /* Header */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--card-slate);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: var(--text-white);
+    }
+
+    .brand-wordmark {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 24px;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card-slate);
+      color: var(--volt-lime);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 99px;
+      letter-spacing: 1px;
+    }
+
+    /* Main Grid */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 48px;
+      align-items: center;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 960px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+    }
+
+    .kicker {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 2.2px;
+      color: var(--volt-lime);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: clamp(38px, 5vw, 60px);
+      line-height: 1.02;
+      letter-spacing: -1px;
+      margin-bottom: 18px;
+    }
+
+    .hero-title span {
+      color: var(--volt-lime);
+    }
+
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: 17px;
+      line-height: 1.55;
+      max-width: 560px;
+      margin-bottom: 28px;
+    }
+
+    /* CTA Buttons */
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .btn-volt {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--volt-lime);
+      color: var(--bg-carbon);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 18px 28px;
+      border-radius: 18px;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    .btn-volt:hover {
+      transform: translateY(-2px);
+      opacity: 0.95;
+    }
+
+    .btn-slate {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--card-slate);
+      color: var(--text-white);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 18px 24px;
+      border-radius: 18px;
+      border: 1.5px solid var(--card-elevated);
+      transition: transform 0.12s ease, border-color 0.12s ease;
+    }
+
+    .btn-slate:hover {
+      transform: translateY(-2px);
+      border-color: var(--volt-lime);
+    }
+
+    /* Feature Cards */
+    .feature-stack {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 560px) {
+      .feature-stack {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .spec-card {
+      background: var(--card-slate);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .spec-card-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: 1.8px;
+      color: var(--volt-lime);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .spec-card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 19px;
+      margin-bottom: 6px;
+    }
+
+    .spec-card-desc {
+      color: var(--text-muted);
+      font-size: 13.5px;
+      line-height: 1.45;
+    }
+
+    /* Interactive Flutter Web Phone Frame */
+    .phone-showcase {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .phone-bezel {
+      width: 392px;
+      max-width: 100%;
+      height: 820px;
+      background: var(--bg-carbon);
+      border-radius: 44px;
+      border: 6px solid var(--card-slate);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(212, 255, 42, 0.18);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .phone-bezel iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: var(--bg-carbon);
+    }
+
+    .phone-caption {
+      margin-top: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="navbar">
+      <a href="./" class="brand">
+        <svg width="38" height="38" viewBox="0 0 100 112" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50 4 C66 11 82 14 92 14 C92 48 86 82 50 108 C14 82 8 48 8 14 C18 14 34 11 50 4 Z" fill="#D4FF2A"/>
+          <path d="M50 24 L75 49 L65.5 58.5 L50 43 L34.5 58.5 L25 49 Z" fill="#6E7F29"/>
+          <path d="M50 46 L75 71 L65.5 80.5 L50 65 L34.5 80.5 L25 71 Z" fill="#101114"/>
+        </svg>
+        <span class="brand-wordmark">PUSHGARD</span>
+      </a>
+      <div class="badge-pill">v1.0.0-BETA · +15 LEAD = INSTANT KO</div>
+    </header>
+
+    <main class="hero-grid">
+      <section>
+        <div class="kicker">EGO RANKING ARENA · BETA RELEASE</div>
+        <h1 class="hero-title">DEFEND YOUR <span>EGO</span> IN 60 SECONDS.</h1>
+        <p class="hero-sub">
+          Battle rivals head-to-head in live camera-verified push-up sets. Every clean rep drives the Tug-of-War bar toward your opponent—hit a <strong>+15 rep lead</strong> for an instant <strong>KO Victory</strong>, or hold the lead when the 60s clock expires.
+        </p>
+
+        <div class="cta-row">
+          <a id="apk-download-link" href="../../releases/latest" class="btn-volt">
+            <span>DOWNLOAD ANDROID APK</span>
+          </a>
+          <a href="app/index.html" class="btn-slate">
+            <span>OPEN FULLSCREEN WEB APP</span>
+          </a>
+        </div>
+
+        <div class="feature-stack">
+          <div class="spec-card">
+            <div class="spec-card-label">TUG-OF-WAR KO BAR</div>
+            <div class="spec-card-title">+15 Rep Lead KO</div>
+            <div class="spec-card-desc">
+              Starts 50/50. Every valid rep shifts the bar by 3.33%. Fill it to 100% for an instant KO or win by 60s Decision.
+            </div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-card-label">COMPETITIVE RANKING</div>
+            <div class="spec-card-title">Win/Loss Elo Rating</div>
+            <div class="spec-card-desc">
+              Climb from Spartan (1000) to Vanguard (1300), Titan (1600), and God of War (1900+) based on match Wins &amp; Losses.
+            </div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-card-label">KINEMATIC ENGINE</div>
+            <div class="spec-card-title">&le; 90&deg; Depth / &ge; 160&deg; Lockout</div>
+            <div class="spec-card-desc">
+              3D shoulder-elbow-wrist angle tracking with EMA (&alpha;=0.35), 5&deg; hysteresis, and 15&deg; hip-line tolerance.
+            </div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-card-label">PRIVACY FIRST</div>
+            <div class="spec-card-title">Video Stays On Device</div>
+            <div class="spec-card-desc">
+              Live camera only. Zero video frames ever leave your phone—only compact joint angle telemetry is audited.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="phone-showcase">
+        <div class="phone-bezel">
+          <iframe src="app/index.html" title="PushGard Live Beta Web App" allow="camera"></iframe>
+        </div>
+        <div class="phone-caption">
+          Interactive Live Flutter Build · Try START BATTLE &rarr; START COUNTDOWN &rarr; +15 KO
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Automatically resolve GitHub repository Releases URL when hosted on *.github.io
+    (function () {
+      var host = window.location.hostname;
+      var pathParts = window.location.pathname.split('/').filter(Boolean);
+      if (host.endsWith('.github.io') && pathParts.length >= 1) {
+        var owner = host.replace('.github.io', '');
+        var repo = pathParts[0];
+        var link = document.getElementById('apk-download-link');
+        if (link) {
+          link.href = 'https://github.com/' + owner + '/' + repo + '/releases/latest';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

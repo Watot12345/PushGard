@@ -1,0 +1,85 @@
+name: Build & Publish Android Release (APK + AAB)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag version (e.g. v1.0.0-beta.1)"
+        required: true
+        default: "v1.0.0-beta.1"
+
+permissions:
+  contents: write
+
+jobs:
+  android_release:
+    name: Verify, Build APK/AAB & Publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify canonical thresholds sync
+        run: ./scripts/sync_thresholds.sh --check
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Run Flutter static analyzer & E2E test suite
+        working-directory: mobile
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Build Universal Release APK, Split ABI APKs & App Bundle
+        working-directory: mobile
+        run: |
+          flutter build apk --release
+          flutter build apk --release --split-per-abi
+          flutter build appbundle --release
+
+      - name: Stage release binaries & compute SHA-256 checksums
+        id: stage
+        run: |
+          TAG="${{ github.event.inputs.release_tag || github.ref_name }}"
+          mkdir -p dist/releases
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk "dist/releases/PushGard-${TAG}-android-universal.apk"
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk "dist/releases/PushGard-android-universal.apk"
+          cp mobile/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "dist/releases/PushGard-${TAG}-arm64-v8a.apk"
+          cp mobile/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "dist/releases/PushGard-${TAG}-armeabi-v7a.apk"
+          cp mobile/build/app/outputs/flutter-apk/app-x86_64-release.apk "dist/releases/PushGard-${TAG}-x86_64.apk"
+          cp mobile/build/app/outputs/bundle/release/app-release.aab "dist/releases/PushGard-${TAG}.aab"
+          (cd dist/releases && sha256sum * > SHA256SUMS.txt)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.stage.outputs.tag }}
+          name: "PushGard ${{ steps.stage.outputs.tag }} — Defend Your EGO"
+          prerelease: ${{ contains(steps.stage.outputs.tag, 'beta') || contains(steps.stage.outputs.tag, 'rc') }}
+          generate_release_notes: true
+          body: |
+            ## PushGard ${{ steps.stage.outputs.tag }} (Android Beta & Web Arena)
+            - **Tug-of-War Battle Bar**: Starts 50/50 (`0.5`). Hitting a **+15 valid rep lead** fills the bar to 100% for an instant **KO Victory**, or hold `>50%` when the 60s timer ends to win by Decision.
+            - **Win/Loss Elo Ego Ranking**: Standard Elo rating (`K=40` provisional, `K=24` standard, floor `100`) across Spartan, Vanguard, Titan, and God of War tiers.
+            - **On-Device Kinematic Engine**: 3D shoulder-elbow-wrist angle tracking (`<=90°` depth, `>=160°` lockout, `5°` hysteresis, `15°` hip alignment, EMA `alpha=0.35`). Zero video frames leave the device.
+            - **Install Instructions**: Download `PushGard-android-universal.apk` (or `arm64-v8a.apk` for modern 64-bit Android phones) and open to install.
+          files: |
+            dist/releases/*
