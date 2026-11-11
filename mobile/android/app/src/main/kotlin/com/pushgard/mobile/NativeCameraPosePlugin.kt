@@ -97,7 +97,7 @@ class NativeCameraPosePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, E
     private fun startCamera(targetResolutionStr: String, lensFacingStr: String, result: MethodChannel.Result) {
         stopCamera()
 
-        val textureEntry = textureRegistry.createSurfaceTextureEntry()
+        val textureEntry = textureRegistry.createSurfaceTexture()
         this.textureEntry = textureEntry
         val surfaceTexture = textureEntry.surfaceTexture()
 
