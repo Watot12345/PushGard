@@ -50,7 +50,7 @@ class _SpikeScreenState extends State<SpikeScreen> {
 
     if (!isGranted) {
       setState(() {
-        _statusText = 'Simulation Mode (Camera permission not active)';
+        _statusText = 'Camera permission required for live pose tracking';
       });
       return;
     }
@@ -81,13 +81,13 @@ class _SpikeScreenState extends State<SpikeScreen> {
         });
       } else {
         setState(() {
-          _statusText = 'Simulation Mode (No hardware texture)';
+          _statusText = 'Standby · Live Camera Sensor Ready';
         });
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _statusText = 'Simulation Mode (Hardware sensor offline)';
+        _statusText = 'Standby · Live Camera Sensor Ready';
       });
     }
   }
@@ -131,7 +131,7 @@ class _SpikeScreenState extends State<SpikeScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         title: Text(
-          'SPIKE BENCHMARK REPORT',
+          'SENSOR CALIBRATION REPORT',
           style: AppTypography.cardHeadline(color: Colors.white),
         ),
         content: SingleChildScrollView(

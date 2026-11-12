@@ -6,6 +6,8 @@ import 'package:mobile/core/kinematics/rep_cycle_detector.dart';
 import 'package:mobile/core/state/player_session_store.dart';
 import 'package:mobile/core/widgets/rank_badge.dart';
 import 'package:mobile/features/match/screens/attempt_summary_screen.dart';
+import 'package:mobile/features/match/screens/battle_active_screen.dart';
+import 'package:mobile/features/match/screens/framing_screen.dart';
 import 'package:mobile/main.dart';
 
 void main() {
@@ -345,9 +347,9 @@ void main() {
     });
   });
 
-  group('3. Framing Gate Combinatorial Checks & Multi-Device / Accessibility Stress Tests', () {
+  group('3. Framing Gate Combinatorial Checks, Anti-Cheat UI & Accessibility Stress Tests', () {
     testWidgets(
-      'FramingScreen disables START COUNTDOWN if ANY of the 3 checks fail',
+      'FramingScreen disables START COUNTDOWN if ANY of the 3 checks fail and prevents tap-to-bypass',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(1170, 2532);
         tester.view.devicePixelRatio = 3.0;
@@ -360,18 +362,29 @@ void main() {
         await tester.tap(find.text('START BATTLE'));
         await tester.pumpAndSettle();
 
+        final framingState =
+            tester.state<FramingScreenState>(find.byType(FramingScreen));
+
         // Fail check 1: Whole body visible -> FIX: step back
+        framingState.setFramingChecksForTesting(bodyInFrame: false);
+        await tester.pump();
+        expect(find.text('FIX: step back'), findsOneWidget);
+
+        // Tapping the status pill in production UI must NOT toggle it to PASS
         await tester.tap(find.text('Whole body visible'));
         await tester.pump();
         expect(find.text('FIX: step back'), findsOneWidget);
+
         // Tapping START COUNTDOWN must NOT navigate while a check fails
         await tester.tap(find.text('START COUNTDOWN'));
         await tester.pump();
         expect(find.text('GET READY'), findsOneWidget);
 
         // Restore check 1, fail check 2: Side-on view -> FIX: rotate 90°
-        await tester.tap(find.text('Whole body visible'));
-        await tester.tap(find.text('Side-on view'));
+        framingState.setFramingChecksForTesting(
+          bodyInFrame: true,
+          sideOnOrientation: false,
+        );
         await tester.pump();
         expect(find.text('FIX: rotate 90°'), findsOneWidget);
         await tester.tap(find.text('START COUNTDOWN'));
@@ -379,12 +392,46 @@ void main() {
         expect(find.text('GET READY'), findsOneWidget);
 
         // Restore check 2 -> all 3 PASS -> START COUNTDOWN navigates to GET SET
-        await tester.tap(find.text('Side-on view'));
+        framingState.setFramingChecksForTesting(sideOnOrientation: true);
         await tester.pump();
         await tester.tap(find.text('START COUNTDOWN'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
         expect(find.text('GET SET'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Production Anti-Cheat Guard: No beta simulation buttons exist and 0 reps are awarded without live camera pose frames',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1170, 2532);
+        tester.view.devicePixelRatio = 3.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: BattleActiveScreen(isBattle: true),
+          ),
+        );
+
+        // Complete 3-2-1 countdown
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump(const Duration(seconds: 1));
+
+        // 1. Assert all beta test / cheat buttons are completely absent from production UI
+        expect(find.text('+1 REP'), findsNothing);
+        expect(find.text('SHALLOW'), findsNothing);
+        expect(find.text('+15 KO'), findsNothing);
+
+        // 2. Advance battle timer by 10 full seconds without camera pose frames
+        for (int i = 0; i < 10; i++) {
+          await tester.pump(const Duration(seconds: 1));
+        }
+
+        // Verify 0 reps are awarded when no live camera pose frames are received
+        expect(find.text('YOU (0)'), findsOneWidget);
       },
     );
 

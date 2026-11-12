@@ -17,10 +17,10 @@ class FramingScreen extends StatefulWidget {
   const FramingScreen({super.key, this.isBattle = true});
 
   @override
-  State<FramingScreen> createState() => _FramingScreenState();
+  State<FramingScreen> createState() => FramingScreenState();
 }
 
-class _FramingScreenState extends State<FramingScreen> {
+class FramingScreenState extends State<FramingScreen> {
   final NativeCameraController _cameraController = NativeCameraController();
   bool _isCameraReady = false;
   PoseFrame? _lastFrame;
@@ -53,7 +53,7 @@ class _FramingScreenState extends State<FramingScreen> {
         });
       }
     } catch (_) {
-      // Runs in interactive preview mode when no hardware camera is attached
+      // Hardware camera unavailable in current environment
     }
   }
 
@@ -99,6 +99,22 @@ class _FramingScreenState extends State<FramingScreen> {
       _bodyInFrame = allInBounds;
       _sideOnOrientation = isProne;
       _lightingPassed = activeMinConf >= 0.60;
+    });
+  }
+
+  @visibleForTesting
+  void evaluateFramingForTesting(PoseFrame frame) => _evaluateFraming(frame);
+
+  @visibleForTesting
+  void setFramingChecksForTesting({
+    bool? bodyInFrame,
+    bool? sideOnOrientation,
+    bool? lightingPassed,
+  }) {
+    setState(() {
+      if (bodyInFrame != null) _bodyInFrame = bodyInFrame;
+      if (sideOnOrientation != null) _sideOnOrientation = sideOnOrientation;
+      if (lightingPassed != null) _lightingPassed = lightingPassed;
     });
   }
 
@@ -209,23 +225,18 @@ class _FramingScreenState extends State<FramingScreen> {
                 label: 'Whole body visible',
                 passed: _bodyInFrame,
                 fixText: 'FIX: step back',
-                onTap: () => setState(() => _bodyInFrame = !_bodyInFrame),
               ),
               const SizedBox(height: 10),
               _buildFramingStatusPill(
                 label: 'Side-on view',
                 passed: _sideOnOrientation,
                 fixText: 'FIX: rotate 90°',
-                onTap: () =>
-                    setState(() => _sideOnOrientation = !_sideOnOrientation),
               ),
               const SizedBox(height: 10),
               _buildFramingStatusPill(
                 label: 'Lighting',
                 passed: _lightingPassed,
                 fixText: 'FIX: brighter light',
-                onTap: () =>
-                    setState(() => _lightingPassed = !_lightingPassed),
               ),
 
               const SizedBox(height: 22),
@@ -271,42 +282,38 @@ class _FramingScreenState extends State<FramingScreen> {
     required String label,
     required bool passed,
     required String fixText,
-    required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: AppTypography.body(
-                  color: Colors.white,
-                  fontSize: 15,
-                ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.body(
+                color: Colors.white,
+                fontSize: 15,
               ),
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                passed ? 'PASS' : fixText,
-                textAlign: TextAlign.right,
-                style: AppTypography.bodyBold(
-                  color: passed ? AppColors.volt : AppColors.coralFix,
-                  fontSize: 15,
-                ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              passed ? 'PASS' : fixText,
+              textAlign: TextAlign.right,
+              style: AppTypography.bodyBold(
+                color: passed ? AppColors.volt : AppColors.coralFix,
+                fontSize: 15,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

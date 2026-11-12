@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/config/thresholds_config.dart';
 import 'package:mobile/core/state/player_session_store.dart';
+import 'package:mobile/features/match/screens/battle_active_screen.dart';
+import 'package:mobile/features/match/screens/framing_screen.dart';
 import 'package:mobile/main.dart';
 
 void main() {
@@ -43,12 +45,21 @@ void main() {
       expect(find.text('Side-on view'), findsOneWidget);
       expect(find.text('Lighting'), findsOneWidget);
 
-      // 3. Toggle Lighting to fail ("FIX: brighter light") and back to "PASS"
+      // 3. Verify framing status pills cannot be tap-toggled by users in production,
+      // and test sensor state transitions via @visibleForTesting hook
+      final framingState =
+          tester.state<FramingScreenState>(find.byType(FramingScreen));
+      framingState.setFramingChecksForTesting(lightingPassed: false);
+      await tester.pump();
+      expect(find.text('FIX: brighter light'), findsOneWidget);
+
+      // Tapping the pill in production UI must NOT bypass the failed check
       await tester.tap(find.text('Lighting'));
       await tester.pump();
       expect(find.text('FIX: brighter light'), findsOneWidget);
 
-      await tester.tap(find.text('Lighting'));
+      // Sensor restores lighting -> PASS
+      framingState.setFramingChecksForTesting(lightingPassed: true);
       await tester.pump();
       expect(find.text('FIX: brighter light'), findsNothing);
 
@@ -67,22 +78,28 @@ void main() {
       expect(find.text('1'), findsOneWidget);
       await tester.pump(const Duration(seconds: 1));
 
-      // Live Battle HUD is now active
+      // Live Battle HUD is now active — verify beta cheat buttons are removed in production!
       expect(find.text('TIME LEFT'), findsOneWidget);
       expect(find.text('REPS (PREVIEW)'), findsOneWidget);
+      expect(find.text('+1 REP'), findsNothing);
+      expect(find.text('SHALLOW'), findsNothing);
+      expect(find.text('+15 KO'), findsNothing);
 
-      // 5. Simulate a shallow rep fault -> verify coaching callout
-      await tester.tap(find.text('SHALLOW'));
+      final battleState =
+          tester.state<BattleActiveScreenState>(find.byType(BattleActiveScreen));
+
+      // 5. Trigger a shallow rep fault via @visibleForTesting hook -> verify coaching callout
+      battleState.recordShallowFaultForTesting();
       await tester.pump();
       expect(find.text('Go lower on the next rep'), findsOneWidget);
 
-      // 6. Simulate a clean rep -> verify coaching callout
-      await tester.tap(find.text('+1 REP'));
+      // 6. Trigger a clean rep via @visibleForTesting hook -> verify coaching callout
+      battleState.recordCleanRepForTesting();
       await tester.pump();
       expect(find.textContaining('Clean rep counted'), findsOneWidget);
 
       // 7. Trigger +15 rep lead Tug-of-War Instant KO!
-      await tester.tap(find.text('+15 KO'));
+      battleState.triggerKoForTesting();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -150,10 +167,17 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
 
+      // Verify no cheat buttons in Solo mode, only FINISH SET
+      expect(find.text('+1 REP'), findsNothing);
+      expect(find.text('FINISH SET'), findsOneWidget);
+
+      final battleState =
+          tester.state<BattleActiveScreenState>(find.byType(BattleActiveScreen));
+
       // 4. Perform 2 clean solo reps and tap FINISH SET
-      await tester.tap(find.text('+1 REP'));
+      battleState.recordCleanRepForTesting();
       await tester.pump();
-      await tester.tap(find.text('+1 REP'));
+      battleState.recordCleanRepForTesting();
       await tester.pump();
       await tester.tap(find.text('FINISH SET'));
       await tester.pump();
@@ -236,7 +260,9 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
 
-      await tester.tap(find.text('+15 KO'));
+      final rematchState =
+          tester.state<BattleActiveScreenState>(find.byType(BattleActiveScreen));
+      rematchState.triggerKoForTesting();
       await tester.pumpAndSettle();
 
       // 6. Verify Rematch KO Win recovers EGO (1769 + 13 = 1782 EGO)

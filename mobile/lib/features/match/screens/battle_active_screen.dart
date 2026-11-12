@@ -21,10 +21,10 @@ class BattleActiveScreen extends StatefulWidget {
   });
 
   @override
-  State<BattleActiveScreen> createState() => _BattleActiveScreenState();
+  State<BattleActiveScreen> createState() => BattleActiveScreenState();
 }
 
-class _BattleActiveScreenState extends State<BattleActiveScreen> {
+class BattleActiveScreenState extends State<BattleActiveScreen> {
   final NativeCameraController _cameraController = NativeCameraController();
   late final AttemptRecordBuilder _recordBuilder;
   StreamSubscription? _subscription;
@@ -78,7 +78,7 @@ class _BattleActiveScreenState extends State<BattleActiveScreen> {
         setState(() => _isCameraReady = true);
       }
     } catch (_) {
-      // Runs in preview mode when no hardware camera is attached
+      // Hardware camera unavailable; zero reps are awarded without live pose frames.
     }
   }
 
@@ -118,6 +118,24 @@ class _BattleActiveScreenState extends State<BattleActiveScreen> {
     });
   }
 
+  @visibleForTesting
+  void injectPoseFrameForTesting(PoseFrame frame) => _onPoseFrame(frame);
+
+  @visibleForTesting
+  void recordCleanRepForTesting() => setState(_recordCleanRep);
+
+  @visibleForTesting
+  void recordShallowFaultForTesting() => _recordShallowFault();
+
+  @visibleForTesting
+  void triggerKoForTesting() {
+    final cfg = ThresholdsConfig.instance;
+    setState(() {
+      _validReps = _rivalReps + cfg.knockoutLeadReps;
+      _checkKnockoutCondition();
+    });
+  }
+
   void _start321Countdown() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
@@ -145,13 +163,9 @@ class _BattleActiveScreenState extends State<BattleActiveScreen> {
           _battleSecondsRemaining -= 0.2;
 
           final tick = (_battleSecondsRemaining * 5).toInt();
-          if (!_isCameraReady && tick % 11 == 0) {
-            _recordCleanRep();
-          } else if (widget.isBattle && tick % 16 == 0) {
+          if (widget.isBattle && _isCameraReady && tick % 16 == 0) {
             _rivalReps++;
             _checkKnockoutCondition();
-          } else if (!_isCameraReady && tick % 11 == 5) {
-            _currentElbowAngle = 84.0;
           }
         });
       } else {
@@ -460,63 +474,32 @@ class _BattleActiveScreenState extends State<BattleActiveScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-
-                    // Interactive Simulation Row for Testing Tug-of-War & Shallow Reps
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSimButton(
-                            label: '+1 REP',
-                            color: AppColors.volt,
-                            textColor: AppColors.background,
-                            onTap: () => setState(_recordCleanRep),
-                          ),
+                    if (!widget.isBattle) ...[
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => _finishBattle(
+                          isKnockout: false,
+                          isForfeit: false,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildSimButton(
-                            label: 'SHALLOW',
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          decoration: BoxDecoration(
                             color: AppColors.surface,
-                            textColor: AppColors.coralFix,
-                            onTap: _recordShallowFault,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'FINISH SET',
+                            style: AppTypography.telemetryCode(
+                              color: AppColors.volt,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-                        if (widget.isBattle) ...[
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSimButton(
-                              label: '+15 KO',
-                              color: AppColors.surface,
-                              textColor: AppColors.volt,
-                              onTap: () {
-                                setState(() {
-                                  _validReps =
-                                      _rivalReps + cfg.knockoutLeadReps;
-                                  _checkKnockoutCondition();
-                                });
-                              },
-                            ),
-                          ),
-                        ] else ...[
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildSimButton(
-                              label: 'FINISH SET',
-                              color: AppColors.surface,
-                              textColor: AppColors.volt,
-                              onTap: () {
-                                _finishBattle(
-                                  isKnockout: false,
-                                  isForfeit: false,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
 
                     Text(
                       'The server confirms your final count after the timer ends.',
@@ -529,29 +512,6 @@ class _BattleActiveScreenState extends State<BattleActiveScreen> {
                   ],
                 ),
               ),
-      ),
-    );
-  }
-
-  Widget _buildSimButton({
-    required String label,
-    required Color color,
-    required Color textColor,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: AppTypography.telemetryCode(color: textColor, fontSize: 11),
-        ),
       ),
     );
   }
