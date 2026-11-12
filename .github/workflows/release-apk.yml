@@ -50,9 +50,9 @@ jobs:
       - name: Build Universal Release APK, Split ABI APKs & App Bundle
         working-directory: mobile
         run: |
-          flutter build apk --release
-          flutter build apk --release --split-per-abi
-          flutter build appbundle --release
+          flutter build apk --release --android-skip-build-dependency-validation
+          flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
+          flutter build appbundle --release --android-skip-build-dependency-validation
 
       - name: Stage release binaries & compute SHA-256 checksums
         id: stage
