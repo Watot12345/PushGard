@@ -196,6 +196,15 @@ class RepCycleDetector {
             _phase = RepPhase.atTop;
             _topPeakAngle = smoothedElbow;
             _topPeakMs = tMs;
+          } else if (smoothedElbow >= config.lockoutElbowAngleMin) {
+            final rep = _finalizeCycle(
+              topMs: tMs,
+              endPeakAngle: smoothedElbow,
+            );
+            _phase = RepPhase.atTop;
+            _topPeakAngle = smoothedElbow;
+            _topPeakMs = tMs;
+            return rep;
           } else {
             _phase = RepPhase.ascending;
             _returnPeakAngle = smoothedElbow;
