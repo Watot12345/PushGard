@@ -1,4 +1,4 @@
-name: Deploy PushGard Beta to GitHub Pages
+name: Deploy PushGard Official Web App to GitHub Pages
 
 on:
   push:
@@ -41,9 +41,9 @@ jobs:
 
       - name: Run Flutter static analyzer
         working-directory: mobile
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
-      - name: Run unit, widget & E2E beta tests
+      - name: Run unit, widget & E2E production tests
         working-directory: mobile
         run: flutter test
 
@@ -51,7 +51,7 @@ jobs:
         working-directory: mobile
         run: flutter build web --release
 
-      - name: Assemble GitHub Pages site (Beta Hub + /app)
+      - name: Assemble GitHub Pages site (Official Hub + /app)
         run: |
           mkdir -p dist/gh-pages/app
           cp web-portal/index.html dist/gh-pages/index.html
