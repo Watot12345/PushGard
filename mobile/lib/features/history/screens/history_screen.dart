@@ -39,13 +39,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'RIVAL PROFILE',
-                    style: AppTypography.trackedLabel(
-                      color: AppColors.volt,
-                      fontSize: 12,
+                  Flexible(
+                    child: Text(
+                      'RIVAL PROFILE',
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.trackedLabel(
+                        color: AppColors.volt,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   RankBadge(egoScore: ego, compact: true),
                 ],
               ),

@@ -76,20 +76,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            t.name,
-                            style: AppTypography.bodyBold(
-                              color: isCurrent ? AppColors.volt : Colors.white,
-                              fontSize: 14,
+                          Flexible(
+                            child: Text(
+                              t.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.bodyBold(
+                                color: isCurrent ? AppColors.volt : Colors.white,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
-                          Text(
-                            isCurrent ? '${t.range} · YOU' : t.range,
-                            style: AppTypography.telemetryCode(
-                              color: isCurrent
-                                  ? AppColors.volt
-                                  : AppColors.textSecondary,
-                              fontSize: 11,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              isCurrent ? '${t.range} · YOU' : t.range,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.right,
+                              style: AppTypography.telemetryCode(
+                                color: isCurrent
+                                    ? AppColors.volt
+                                    : AppColors.textSecondary,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ],
