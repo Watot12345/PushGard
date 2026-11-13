@@ -436,6 +436,53 @@ void main() {
     );
 
     testWidgets(
+      'Icon Navigation & Interactive Sheets: Bottom bar uses icons and Home/Ranks cards open interactive modals',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1170, 2532);
+        tester.view.devicePixelRatio = 3.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(const PushGardApp());
+        await tester.pump();
+
+        // 1. Verify icon-based bottom navigation (no text labels in nav bar)
+        expect(find.byIcon(Icons.home_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.emoji_events_outlined), findsOneWidget);
+        expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
+        expect(find.byTooltip('HOME'), findsOneWidget);
+        expect(find.byTooltip('BATTLE'), findsOneWidget);
+        expect(find.byTooltip('RANKS'), findsOneWidget);
+        expect(find.byTooltip('PROFILE'), findsOneWidget);
+
+        // 2. Tap EgoCounterCard -> opens EGO RANK TIERS sheet
+        await tester.tap(find.text('EGO RANKING'));
+        await tester.pumpAndSettle();
+        expect(find.text('EGO RANK TIERS'), findsOneWidget);
+        Navigator.of(tester.element(find.text('EGO RANK TIERS'))).pop();
+        await tester.pumpAndSettle();
+
+        // 3. Tap waiting challenge card -> NUDGE RIVAL -> updates card state
+        await tester.ensureVisible(find.text('vs. [MARCUS_FIT]'));
+        await tester.pump();
+        await tester.tap(find.text('vs. [MARCUS_FIT]'));
+        await tester.pumpAndSettle();
+        expect(find.text('NUDGE RIVAL'), findsOneWidget);
+        await tester.tap(find.text('NUDGE RIVAL'));
+        await tester.pumpAndSettle();
+        expect(find.text('Rival nudged · You lead 38 reps'), findsOneWidget);
+
+        // 4. Switch to RANKS tab and tap a rival -> opens RIVAL PROFILE sheet
+        await tester.tap(find.byTooltip('RANKS'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('APEX_REAPER'));
+        await tester.pumpAndSettle();
+        expect(find.text('RIVAL PROFILE'), findsOneWidget);
+        expect(find.text('CHALLENGE RIVAL'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'Viewport & Accessibility Stress Test: Compact 320x568 (iPhone SE) & 1.30x Large Font Scaling have zero layout overflows',
       (WidgetTester tester) async {
         tester.view.physicalSize = const Size(640, 1136);
@@ -458,16 +505,16 @@ void main() {
         expect(find.text('PUSHGARD'), findsOneWidget);
 
         // 2. Ranks Screen on 320x568 @ 1.30x text scale
-        await tester.tap(find.text('RANKS'));
-        await tester.pump();
+        await tester.tap(find.byTooltip('RANKS'));
+        await tester.pumpAndSettle();
         expect(find.text('BATTLE LOG'), findsOneWidget);
 
         await tester.tap(find.text('BATTLE LOG'));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         // 3. Profile Screen on 320x568 @ 1.30x text scale
-        await tester.tap(find.text('PROFILE'));
-        await tester.pump();
+        await tester.tap(find.byTooltip('PROFILE'));
+        await tester.pumpAndSettle();
         expect(find.text('SENSOR CALIBRATION'), findsOneWidget);
       },
     );

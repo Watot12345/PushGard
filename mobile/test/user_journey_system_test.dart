@@ -120,13 +120,13 @@ void main() {
         findsOneWidget,
       );
 
-      // 10. Switch to RANKS tab and verify updated EGO in League & Battle Log
-      await tester.tap(find.text('RANKS'));
-      await tester.pump();
+      // 10. Switch to RANKS tab via icon tooltip and verify updated EGO in League & Battle Log
+      await tester.tap(find.byTooltip('RANKS'));
+      await tester.pumpAndSettle();
       expect(find.text('49W - 6L · 20 KOs'), findsOneWidget);
 
       await tester.tap(find.text('BATTLE LOG'));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.text('+13 EGO'), findsOneWidget);
     },
   );
@@ -143,14 +143,14 @@ void main() {
       await tester.pumpWidget(const PushGardApp());
       await tester.pump();
 
-      // 1. Check PROFILE tab (Hardware Spike & Sensor Calibration)
-      await tester.tap(find.text('PROFILE'));
-      await tester.pump();
+      // 1. Check PROFILE tab via icon tooltip (Sensor Calibration)
+      await tester.tap(find.byTooltip('PROFILE'));
+      await tester.pumpAndSettle();
       expect(find.text('SENSOR CALIBRATION'), findsOneWidget);
 
-      // 2. Return to HOME tab and launch SOLO WARMUP
-      await tester.tap(find.text('HOME'));
-      await tester.pump();
+      // 2. Return to HOME tab via icon tooltip and launch SOLO WARMUP
+      await tester.tap(find.byTooltip('HOME'));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('SOLO WARMUP'));
       await tester.pump();
       await tester.tap(find.text('SOLO WARMUP'));

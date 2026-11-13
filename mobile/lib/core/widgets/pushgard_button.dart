@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
@@ -64,6 +65,7 @@ class _PushGardButtonState extends State<PushGardButton> {
       onTapUp: isEnabled
           ? (_) {
               setState(() => _isPressed = false);
+              HapticFeedback.lightImpact();
               widget.onPressed?.call();
             }
           : null,
