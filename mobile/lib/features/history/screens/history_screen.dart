@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/network/pushgard_api_client.dart';
 import '../../../core/state/player_session_store.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -15,7 +16,40 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  int _activeTab = 0; // 0: Ranks Bracket, 1: Battle Log
+  int _activeTab = 0; // 0: Ranks / Leaderboard, 1: Battle Log
+  String _leaderboardType = 'ego'; // 'ego' | 'ko' | 'reps'
+  LeaderboardResponse? _liveLeaderboard;
+  bool _loadingBoard = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLeaderboard();
+  }
+
+  Future<void> _loadLeaderboard() async {
+    if (_loadingBoard) return;
+    setState(() => _loadingBoard = true);
+    try {
+      final res = await PushgardApiClient.instance.fetchLeaderboard(
+        type: _leaderboardType,
+      );
+      if (mounted) {
+        setState(() {
+          _liveLeaderboard = res;
+          _loadingBoard = false;
+        });
+      }
+    } catch (_) {
+      // Server offline or unauthenticated -> graceful fallback to local bracket
+      if (mounted) {
+        setState(() {
+          _liveLeaderboard = null;
+          _loadingBoard = false;
+        });
+      }
+    }
+  }
 
   void _showRivalSheet(BuildContext context, Map<String, dynamic> row) {
     final name = row['name'] as String;
@@ -194,20 +228,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (context, _) {
         final losses = (store.totalBattles - store.battlesWon).clamp(0, 99999);
         final standings = <Map<String, dynamic>>[
-          {'name': 'APEX_REAPER', 'record': '56W - 4L', 'kos': 29, 'ego': 1945, 'isMe': false},
-          {'name': 'IRON_VALKYRIE', 'record': '51W - 7L', 'kos': 24, 'ego': 1860, 'isMe': false},
-          {'name': 'SPARTAN_99', 'record': '49W - 8L', 'kos': 21, 'ego': 1815, 'isMe': false},
+          {'name': 'APEX_REAPER', 'record': '56W - 4L', 'kos': 29, 'ego': 1945, 'reps': 16200, 'isMe': false},
+          {'name': 'IRON_VALKYRIE', 'record': '51W - 7L', 'kos': 24, 'ego': 1860, 'reps': 14800, 'isMe': false},
+          {'name': 'SPARTAN_99', 'record': '49W - 8L', 'kos': 21, 'ego': 1815, 'reps': 13900, 'isMe': false},
           {
             'name': 'YOU (VANGUARD_01)',
             'record': '${store.battlesWon}W - ${losses}L',
             'kos': store.koWins,
             'ego': store.egoRating,
+            'reps': store.lifetimeValidReps,
             'isMe': true,
           },
-          {'name': 'CYBER_KONG', 'record': '44W - 11L', 'kos': 16, 'ego': 1755, 'isMe': false},
-          {'name': 'MARCUS_FIT', 'record': '39W - 14L', 'kos': 12, 'ego': 1690, 'isMe': false},
-          {'name': 'NIGHT_HAWK', 'record': '35W - 18L', 'kos': 9, 'ego': 1640, 'isMe': false},
-        ]..sort((a, b) => (b['ego'] as int).compareTo(a['ego'] as int));
+          {'name': 'CYBER_KONG', 'record': '44W - 11L', 'kos': 16, 'ego': 1755, 'reps': 11400, 'isMe': false},
+          {'name': 'MARCUS_FIT', 'record': '39W - 14L', 'kos': 12, 'ego': 1690, 'reps': 9850, 'isMe': false},
+          {'name': 'NIGHT_HAWK', 'record': '35W - 18L', 'kos': 9, 'ego': 1640, 'reps': 8400, 'isMe': false},
+        ]..sort((a, b) {
+            final key = _leaderboardType == 'ko'
+                ? 'kos'
+                : (_leaderboardType == 'reps' ? 'reps' : 'ego');
+            return (b[key] as int).compareTo(a[key] as int);
+          });
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -323,84 +363,178 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildLeagueBracketView(List<Map<String, dynamic>> standings) {
-    return ListView.separated(
-      key: const ValueKey('league_bracket'),
-      itemCount: standings.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final row = standings[index];
-        final int rank = index + 1;
-        final bool isMe = row['isMe'] as bool;
-        final bool inPromotion = rank <= 5;
-
-        return GestureDetector(
-          onTap: isMe
-              ? null
-              : () {
-                  HapticFeedback.selectionClick();
-                  _showRivalSheet(context, row);
-                },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
-              border: isMe ? Border.all(color: AppColors.volt, width: 2.0) : null,
+  Widget _buildFilterChip(String label, String type) {
+    final active = _leaderboardType == type;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _leaderboardType = type);
+          _loadLeaderboard();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.volt.withValues(alpha: 0.16)
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: active ? AppColors.volt : Colors.white10,
             ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 32,
-                  child: Text(
-                    '#$rank',
-                    style: AppTypography.telemetryCode(
-                      color: inPromotion ? AppColors.volt : AppColors.textMuted,
-                      fontSize: 13,
-                    ),
-                  ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: AppTypography.telemetryCode(
+              color: active ? AppColors.volt : AppColors.textMuted,
+              fontSize: 11,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeagueBracketView(List<Map<String, dynamic>> standings) {
+    final live = _liveLeaderboard;
+    final rows = live != null
+        ? live.entries
+            .map((e) => {
+                  'name': e.handle,
+                  'record': '${e.wins}W - ${e.losses}L',
+                  'kos': e.koWins,
+                  'ego': e.egoRating,
+                  'reps': e.lifetimeValidReps,
+                  'isMe': false,
+                })
+            .toList()
+        : standings;
+
+    return Column(
+      key: const ValueKey('league_bracket'),
+      children: [
+        Row(
+          children: [
+            _buildFilterChip('EGO', 'ego'),
+            const SizedBox(width: 8),
+            _buildFilterChip('KO WINS', 'ko'),
+            const SizedBox(width: 8),
+            _buildFilterChip('REPS', 'reps'),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: live != null ? AppColors.volt : Colors.white10,
                 ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              child: Text(
+                live != null ? 'LIVE' : 'LOCAL',
+                style: AppTypography.telemetryCode(
+                  color: live != null ? AppColors.volt : AppColors.textMuted,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: ListView.separated(
+            itemCount: rows.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final row = rows[index];
+              final int rank = index + 1;
+              final bool isMe = row['isMe'] as bool;
+              final bool inPromotion = rank <= 5;
+              final int primaryValue = _leaderboardType == 'ko'
+                  ? (row['kos'] as int)
+                  : (_leaderboardType == 'reps'
+                      ? (row['reps'] as int)
+                      : (row['ego'] as int));
+
+              return GestureDetector(
+                onTap: isMe
+                    ? null
+                    : () {
+                        HapticFeedback.selectionClick();
+                        _showRivalSheet(context, row);
+                      },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: isMe
+                        ? Border.all(color: AppColors.volt, width: 2.0)
+                        : null,
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        row['name'] as String,
-                        style: AppTypography.bodyBold(
-                          color: isMe ? AppColors.volt : Colors.white,
-                          fontSize: 15,
+                      SizedBox(
+                        width: 32,
+                        child: Text(
+                          '#$rank',
+                          style: AppTypography.telemetryCode(
+                            color: inPromotion
+                                ? AppColors.volt
+                                : AppColors.textMuted,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${row['record']} · ${row['kos']} KOs',
-                        style: AppTypography.body(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              row['name'] as String,
+                              style: AppTypography.bodyBold(
+                                color: isMe ? AppColors.volt : Colors.white,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${row['record']} · ${row['kos']} KOs',
+                              style: AppTypography.body(
+                                color: AppColors.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      Text(
+                        '$primaryValue',
+                        style: AppTypography.sectionTitle(
+                          color: inPromotion ? AppColors.volt : Colors.white,
+                        ).copyWith(fontSize: 22),
+                      ),
+                      if (!isMe) ...[
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.textMuted,
+                          size: 18,
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                Text(
-                  '${row['ego']}',
-                  style: AppTypography.sectionTitle(
-                    color: inPromotion ? AppColors.volt : Colors.white,
-                  ).copyWith(fontSize: 22),
-                ),
-                if (!isMe) ...[
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.textMuted,
-                    size: 18,
-                  ),
-                ],
-              ],
-            ),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 

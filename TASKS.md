@@ -28,11 +28,11 @@ Update this file as work is completed. Only work on the **current phase**.
 - [x] GitHub Pages Beta Hub (`web-portal/index.html` + live `/app/` Flutter Web build via `.github/workflows/deploy-pages.yml`)
 - [x] GitHub Releases Android APK/AAB pipeline (`.github/workflows/release-apk.yml` + `scripts/prepare_release.sh`)
 
-## Phase 2: Server and score
-- [ ] Create match and nonce endpoints
-- [ ] Submit match endpoint with validation (including Tug-of-War +15 rep lead KO timestamp check)
-- [ ] Win/Loss Elo Ego Rating calculation & history logic with unit tests
-- [ ] Fetch scores, league bracket & match history endpoint
+## Phase 2: Server and score (completed)
+- [x] Create match and nonce endpoints (`POST /api/matches`, `POST /api/matches/{id}/start`, `GET /api/matches`)
+- [x] Submit match endpoint with validation (including Tug-of-War +15 rep lead KO timestamp check, idempotency & NONCE_REUSE flagging)
+- [x] Win/Loss Elo Ego Rating calculation & history logic with unit tests (`11/11` PHPUnit tests passing)
+- [x] Fetch scores, league bracket & global leaderboards endpoint (`GET /api/leaderboards` with `ego`, `ko`, `reps` boards)
 
 ## Later (do not start yet)
 See ROADMAP.md.
