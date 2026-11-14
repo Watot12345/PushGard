@@ -54,6 +54,53 @@ void main() {
       expect(res.entries.first.handle, 'TITAN_PRO');
       expect(res.entries.first.egoRating, 1920);
     });
+
+    test('executes createMatch -> startMatch -> submitMatch with raw samples', () async {
+      final calledPaths = <String>[];
+      final mockHttp = MockClient((request) async {
+        calledPaths.add('${request.method} ${request.url.path}');
+        if (request.url.path == '/api/matches') {
+          return http.Response(jsonEncode({'match': {'id': 77}}), 201);
+        }
+        if (request.url.path == '/api/matches/77/start') {
+          return http.Response(jsonEncode({'nonce': 'nonce-xyz-99'}), 201);
+        }
+        if (request.url.path == '/api/matches/77/submit') {
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          expect(body['nonce'], 'nonce-xyz-99');
+          expect((body['samples'] as List).length, 2);
+          return http.Response(
+            jsonEncode({'attempt_valid': true, 'server_valid_reps': 12}),
+            200,
+          );
+        }
+        return http.Response('{}', 404);
+      });
+
+      final client = PushgardApiClient(
+        baseUrl: 'https://api.pushgard.test/api',
+        httpClient: mockHttp,
+      )..setToken('player-jwt');
+
+      final matchRes = await client.createMatch();
+      final matchId = (matchRes['match']['id'] as num).toInt();
+      final startRes = await client.startMatch(matchId);
+      final submitRes = await client.submitMatch(
+        matchId: matchId,
+        nonce: startRes['nonce'] as String,
+        samples: [
+          [0, 165.0, 5.0, 0.92],
+          [40, 80.0, 6.0, 0.90],
+        ],
+      );
+
+      expect(calledPaths, [
+        'POST /api/matches',
+        'POST /api/matches/77/start',
+        'POST /api/matches/77/submit',
+      ]);
+      expect(submitRes['server_valid_reps'], 12);
+    });
   });
 
   group('HistoryScreen Global Leaderboard UI', () {

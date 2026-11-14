@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/config/thresholds_config.dart';
 import '../../../core/kinematics/attempt_record_builder.dart';
 import '../../../core/kinematics/joint_angle_math.dart';
+import '../../../core/network/pushgard_api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../spike/native_camera_controller.dart';
@@ -13,11 +14,13 @@ import 'attempt_summary_screen.dart';
 class BattleActiveScreen extends StatefulWidget {
   final bool isBattle;
   final BodySide initialBodySide;
+  final PushgardApiClient? apiClient;
 
   const BattleActiveScreen({
     super.key,
     this.isBattle = true,
     this.initialBodySide = BodySide.right,
+    this.apiClient,
   });
 
   @override
@@ -51,6 +54,10 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
   String _coachingText = 'Full lockout — drop to <=90°';
   bool _isCoachingWarning = false;
   bool _hasFinished = false;
+  int? _serverMatchId;
+  String? _serverNonce;
+
+  PushgardApiClient get _api => widget.apiClient ?? PushgardApiClient.instance;
 
   @override
   void initState() {
@@ -68,6 +75,20 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
   }
 
   Future<void> _initBattleSession() async {
+    if (_api.isAuthenticated && widget.isBattle) {
+      try {
+        final matchRes = await _api.createMatch();
+        final matchId = (matchRes['match']?['id'] as num?)?.toInt();
+        if (matchId != null) {
+          final startRes = await _api.startMatch(matchId);
+          _serverMatchId = matchId;
+          _serverNonce = startRes['nonce'] as String?;
+        }
+      } catch (_) {
+        // Offline or server unavailable; fall back to local evaluation cleanly.
+      }
+    }
+
     try {
       final textureId = await _cameraController.startCamera(
         targetResolution: '480p',
@@ -208,7 +229,10 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
     }
   }
 
-  void _finishBattle({required bool isKnockout, required bool isForfeit}) {
+  Future<void> _finishBattle({
+    required bool isKnockout,
+    required bool isForfeit,
+  }) async {
     if (_hasFinished) return;
     _hasFinished = true;
     _countdownTimer?.cancel();
@@ -216,11 +240,28 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
     _subscription?.cancel();
     _cameraController.stopCamera();
 
+    int verifiedValidReps = _validReps;
+    if (_serverMatchId != null &&
+        _serverNonce != null &&
+        _recordBuilder.rawSamples.length >= 2) {
+      try {
+        final submitRes = await _api.submitMatch(
+          matchId: _serverMatchId!,
+          nonce: _serverNonce!,
+          samples: _recordBuilder.rawSamples,
+        );
+        verifiedValidReps =
+            (submitRes['server_valid_reps'] as num?)?.toInt() ?? _validReps;
+      } catch (_) {
+        // Network drop: preserve local count in UI while server keeps attempt open for retry.
+      }
+    }
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => AttemptSummaryScreen(
-          validReps: _validReps,
+          validReps: verifiedValidReps,
           opponentReps: widget.isBattle ? _rivalReps : 0,
           shallowReps: _shallowReps,
           noLockoutReps: _noLockoutReps,
