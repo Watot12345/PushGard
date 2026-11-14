@@ -7,6 +7,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/ego_counter_card.dart';
 import '../../../core/widgets/pushgard_button.dart';
 import '../../../core/widgets/rank_badge.dart';
+import '../../auth/screens/auth_screen.dart';
 import '../../match/screens/framing_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -317,7 +318,73 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 14),
+
+                  // Compact Account Strip (Guest / Social / Manual Sign In)
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const AuthScreen()),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: store.isGuest
+                              ? AppColors.volt.withValues(alpha: 0.45)
+                              : Colors.white10,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            store.isGuest
+                                ? Icons.warning_amber_rounded
+                                : Icons.verified_user_outlined,
+                            color: store.isGuest
+                                ? AppColors.volt
+                                : AppColors.textSecondary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              store.isGuest
+                                  ? '${store.handle} · GUEST (NO BACKUP)'
+                                  : '${store.handle} · ${store.provider.toUpperCase()}',
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.telemetryCode(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'ACCOUNT',
+                            style: AppTypography.telemetryCode(
+                              color: AppColors.volt,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppColors.volt,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
 
                   // 2. Hero Ego Card (Page 3 of PDF — reactive & tappable for Rank Ladder)
                   EgoCounterCard(

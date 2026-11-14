@@ -139,6 +139,46 @@ class PushgardApiClient {
     throw Exception(body['message'] ?? 'Login failed (${res.statusCode})');
   }
 
+  Future<Map<String, dynamic>> continueAsGuest({String? handle}) async {
+    final res = await _http.post(
+      Uri.parse('$baseUrl/auth/guest'),
+      headers: _headers(),
+      body: jsonEncode({
+        'handle': ?handle,
+      }),
+    );
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      _token = body['token'] as String?;
+      return body;
+    }
+    throw Exception(body['message'] ?? 'Guest sign-in failed (${res.statusCode})');
+  }
+
+  Future<Map<String, dynamic>> oauthSignIn({
+    required String provider,
+    required String providerId,
+    String? email,
+    String? handle,
+  }) async {
+    final res = await _http.post(
+      Uri.parse('$baseUrl/auth/oauth'),
+      headers: _headers(),
+      body: jsonEncode({
+        'provider': provider,
+        'provider_id': providerId,
+        'email': ?email,
+        'handle': ?handle,
+      }),
+    );
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      _token = body['token'] as String?;
+      return body;
+    }
+    throw Exception(body['message'] ?? 'Social sign-in failed (${res.statusCode})');
+  }
+
   Future<Map<String, dynamic>> createMatch({int? opponentId}) async {
     final res = await _http.post(
       Uri.parse('$baseUrl/matches'),

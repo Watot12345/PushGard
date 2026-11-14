@@ -30,6 +30,9 @@ class BattleLogEntry {
 class PlayerSessionStore extends ChangeNotifier {
   static final PlayerSessionStore instance = PlayerSessionStore();
 
+  String _handle = 'VANGUARD_01';
+  String _provider = 'local'; // local | guest | manual | google | facebook
+  bool _isGuest = false;
   int _egoRating = 1780;
   int _battlesWon = 48;
   int _totalBattles = 54;
@@ -70,6 +73,9 @@ class PlayerSessionStore extends ChangeNotifier {
     ),
   ];
 
+  String get handle => _handle;
+  String get provider => _provider;
+  bool get isGuest => _isGuest;
   int get egoRating => _egoRating;
   int get battlesWon => _battlesWon;
   int get totalBattles => _totalBattles;
@@ -77,6 +83,18 @@ class PlayerSessionStore extends ChangeNotifier {
   int get lifetimeValidReps => _lifetimeValidReps;
   int get weeklyEgoDelta => _weeklyEgoDelta;
   List<BattleLogEntry> get battleHistory => List.unmodifiable(_battleHistory);
+
+  void applyAuthenticatedPlayer(Map<String, dynamic> player) {
+    _handle = player['handle'] as String? ?? _handle;
+    _provider = player['provider'] as String? ?? 'manual';
+    _isGuest = player['is_guest'] as bool? ?? false;
+    _egoRating = (player['ego_rating'] as num?)?.toInt() ?? _egoRating;
+    _battlesWon = (player['wins'] as num?)?.toInt() ?? 0;
+    _totalBattles = (player['completed_matches'] as num?)?.toInt() ?? 0;
+    _koWins = (player['ko_wins'] as num?)?.toInt() ?? 0;
+    _lifetimeValidReps = (player['lifetime_valid_reps'] as num?)?.toInt() ?? 0;
+    _notifySafely();
+  }
 
   void _notifySafely() {
     if (SchedulerBinding.instance.schedulerPhase ==
@@ -90,6 +108,9 @@ class PlayerSessionStore extends ChangeNotifier {
   }
 
   void resetForTesting() {
+    _handle = 'VANGUARD_01';
+    _provider = 'local';
+    _isGuest = false;
     _egoRating = 1780;
     _battlesWon = 48;
     _totalBattles = 54;

@@ -9,6 +9,8 @@ Route::get('/health', static fn () => response()->json(['status' => 'ok', 'servi
 
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/guest', [AuthController::class, 'guest']);
+Route::post('/auth/oauth', [AuthController::class, 'oauth']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);

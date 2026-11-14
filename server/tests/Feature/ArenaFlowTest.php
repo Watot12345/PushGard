@@ -158,4 +158,43 @@ class ArenaFlowTest extends TestCase
             ->assertOk();
         $this->assertSame('TITAN_PRO', $koRes->json('leaderboard.0.handle'));
     }
+
+    public function test_guest_mode_and_social_oauth_create_real_db_players(): void
+    {
+        // Guest creates a real DB user with a unique generated handle + warning
+        $guestRes = $this->postJson('/api/auth/guest')->assertCreated();
+        $this->assertTrue($guestRes->json('player.is_guest'));
+        $this->assertSame('guest', $guestRes->json('player.provider'));
+        $this->assertStringStartsWith('GUEST_', $guestRes->json('player.handle'));
+        $this->assertStringContainsString('no backup recovery', $guestRes->json('warning'));
+
+        $guestToken = $guestRes->json('token');
+        $this->withToken($guestToken)
+            ->getJson('/api/profile')
+            ->assertOk()
+            ->assertJsonPath('player.id', $guestRes->json('player.id'));
+
+        // Google OAuth creates/signs in a non-guest player
+        $this->app['auth']->forgetGuards();
+        $googleRes = $this->postJson('/api/auth/oauth', [
+            'provider' => 'google',
+            'provider_id' => 'google-uid-12345',
+            'email' => 'spartan@gmail.com',
+            'handle' => 'GMAIL_WARRIOR',
+        ])->assertOk();
+
+        $this->assertFalse($googleRes->json('player.is_guest'));
+        $this->assertSame('google', $googleRes->json('player.provider'));
+        $this->assertSame('GMAIL_WARRIOR', $googleRes->json('player.handle'));
+
+        // Facebook OAuth creates/signs in a non-guest player
+        $fbRes = $this->postJson('/api/auth/oauth', [
+            'provider' => 'facebook',
+            'provider_id' => 'fb-uid-99999',
+        ])->assertOk();
+
+        $this->assertFalse($fbRes->json('player.is_guest'));
+        $this->assertSame('facebook', $fbRes->json('player.provider'));
+        $this->assertStringStartsWith('META_', $fbRes->json('player.handle'));
+    }
 }

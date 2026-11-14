@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/network/pushgard_api_client.dart';
+import 'package:mobile/core/state/player_session_store.dart';
+import 'package:mobile/features/auth/screens/auth_screen.dart';
 import 'package:mobile/features/history/screens/history_screen.dart';
 
 void main() {
@@ -72,6 +74,62 @@ void main() {
       await tester.tap(find.text('REPS'));
       await tester.pumpAndSettle();
       expect(find.text('16200'), findsOneWidget);
+    });
+  });
+
+  group('AuthScreen (Manual, Social OAuth, Guest Mode)', () {
+    testWidgets('shows all auth choices and creates unique guest DB user with warning', (
+      tester,
+    ) async {
+      final mockHttp = MockClient((request) async {
+        expect(request.url.path, '/api/auth/guest');
+        return http.Response(
+          jsonEncode({
+            'token': 'guest-token-123',
+            'warning': 'Guest account has no backup recovery.',
+            'player': {
+              'id': 42,
+              'handle': 'GUEST_7F3A12',
+              'provider': 'guest',
+              'is_guest': true,
+              'ego_rating': 1000,
+              'wins': 0,
+              'completed_matches': 0,
+              'ko_wins': 0,
+              'lifetime_valid_reps': 0,
+            },
+          }),
+          201,
+        );
+      });
+
+      final client = PushgardApiClient(
+        baseUrl: 'https://api.pushgard.test/api',
+        httpClient: mockHttp,
+      );
+
+      await tester.pumpWidget(MaterialApp(home: AuthScreen(apiClient: client)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('CREATE ACCOUNT'), findsOneWidget);
+      expect(find.text('CONTINUE WITH GMAIL / GOOGLE'), findsOneWidget);
+      expect(find.text('CONTINUE WITH FACEBOOK'), findsOneWidget);
+      expect(find.text('PLAY AS GUEST (NO BACKUP RECOVERY)'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('PLAY AS GUEST (NO BACKUP RECOVERY)'));
+      await tester.tap(find.text('PLAY AS GUEST (NO BACKUP RECOVERY)'));
+      await tester.pumpAndSettle();
+
+      // Explicit no-recovery warning dialog appears
+      expect(find.text('GUEST MODE WARNING'), findsOneWidget);
+      await tester.tap(find.text('CREATE GUEST'));
+      await tester.pumpAndSettle();
+
+      expect(PlayerSessionStore.instance.handle, 'GUEST_7F3A12');
+      expect(PlayerSessionStore.instance.isGuest, isTrue);
+      expect(PlayerSessionStore.instance.egoRating, 1000);
+      expect(client.isAuthenticated, isTrue);
+      PlayerSessionStore.instance.resetForTesting();
     });
   });
 }

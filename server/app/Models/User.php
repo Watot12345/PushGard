@@ -14,6 +14,9 @@ use Laravel\Sanctum\HasApiTokens;
 #[Fillable([
     'name',
     'handle',
+    'provider',
+    'provider_id',
+    'is_guest',
     'email',
     'password',
     'ego_rating',
@@ -41,6 +44,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_guest' => 'boolean',
             'ego_rating' => 'integer',
             'completed_matches' => 'integer',
             'wins' => 'integer',
