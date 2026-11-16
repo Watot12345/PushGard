@@ -1,0 +1,3 @@
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-dontwarn com.google.mlkit.**

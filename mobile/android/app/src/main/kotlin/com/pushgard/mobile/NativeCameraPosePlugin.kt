@@ -17,7 +17,10 @@ import com.google.mlkit.vision.pose.PoseDetection
 import com.google.mlkit.vision.pose.PoseDetector
 import com.google.mlkit.vision.pose.PoseLandmark
 import com.google.mlkit.vision.pose.defaults.PoseDetectorOptions
+import android.app.Activity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -25,9 +28,14 @@ import io.flutter.view.TextureRegistry
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class NativeCameraPosePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
+class NativeCameraPosePlugin :
+    FlutterPlugin,
+    MethodChannel.MethodCallHandler,
+    EventChannel.StreamHandler,
+    ActivityAware {
 
     private lateinit var context: Context
+    private var activity: Activity? = null
     private lateinit var textureRegistry: TextureRegistry
     private var methodChannel: MethodChannel? = null
     private var eventChannel: EventChannel? = null
@@ -49,14 +57,6 @@ class NativeCameraPosePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, E
 
         eventChannel = EventChannel(binding.binaryMessenger, "com.pushgard/pose_events")
         eventChannel?.setStreamHandler(this)
-
-        cameraExecutor = Executors.newSingleThreadExecutor()
-
-        // Configure ML Kit stream mode options
-        val options = PoseDetectorOptions.Builder()
-            .setDetectorMode(PoseDetectorOptions.STREAM_MODE)
-            .build()
-        poseDetector = PoseDetection.getClient(options)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -69,6 +69,22 @@ class NativeCameraPosePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, E
         cameraExecutor = null
         poseDetector?.close()
         poseDetector = null
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activity = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -135,6 +151,13 @@ class NativeCameraPosePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, E
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
 
+                if (poseDetector == null) {
+                    val options = PoseDetectorOptions.Builder()
+                        .setDetectorMode(PoseDetectorOptions.STREAM_MODE)
+                        .build()
+                    poseDetector = PoseDetection.getClient(options)
+                }
+
                 val executor = cameraExecutor ?: Executors.newSingleThreadExecutor().also { cameraExecutor = it }
 
                 imageAnalysis.setAnalyzer(executor) { imageProxy ->
@@ -142,12 +165,11 @@ class NativeCameraPosePlugin : FlutterPlugin, MethodChannel.MethodCallHandler, E
                 }
 
                 // Bind to lifecycle
-                val lifecycleOwner = context as? LifecycleOwner
+                val lifecycleOwner = (activity as? LifecycleOwner) ?: (context as? LifecycleOwner)
                 if (lifecycleOwner != null) {
                     provider.unbindAll()
                     provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis)
                 } else {
-                    // Fallback for background service or activity without direct cast
                     provider.unbindAll()
                 }
 

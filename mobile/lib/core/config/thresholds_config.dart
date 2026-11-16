@@ -68,7 +68,9 @@ class ThresholdsConfig {
   static Future<ThresholdsConfig> loadFromAsset() async {
     if (_isLoaded) return instance;
     try {
-      final raw = await rootBundle.loadString('assets/config/thresholds.json');
+      final raw = await rootBundle
+          .loadString('assets/config/thresholds.json')
+          .timeout(const Duration(seconds: 2));
       final map = jsonDecode(raw) as Map<String, dynamic>;
       instance = ThresholdsConfig.fromJson(map);
       _isLoaded = true;
