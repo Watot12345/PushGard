@@ -1,7 +1,17 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
 }
 
 android {
@@ -29,15 +39,34 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
-            // Disable R8 shrinking/obfuscation so ML Kit's MlKitInitProvider &
-            // ComponentDiscovery reflection registrars are never stripped at startup.
+            // Use persistent release keystore when mobile/android/key.properties is present
+            // (populated in CI from GitHub Secrets), otherwise fall back to debug signing.
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            // Keep R8 shrinking disabled so ML Kit & Room startup providers are never stripped;
+            // proguard-rules.pro also includes explicit keep rules if R8 is re-enabled later.
             isMinifyEnabled = false
             isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -53,6 +82,10 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("com.google.mlkit:pose-detection:18.0.0-beta5")
+    // Override outdated transitive androidx.work 2.7.0 pulled in by ML Kit Pose Detection
+    // so WorkManagerInitializer & Room WorkDatabase are compatible with Android 13-16.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.work:work-multiprocess:2.9.1")
 }
 
 kotlin {
