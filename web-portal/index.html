@@ -3,27 +3,67 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PushGard — Official Release &amp; Interactive Arena</title>
-  <meta name="description" content="PushGard — Defend Your EGO. 1v1 Head-to-Head Push-Up Battles with Tug-of-War KO &amp; Win/Loss Elo Ranking." />
-  <meta name="theme-color" content="#0B0B0F" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    try {
+      var savedScheme = localStorage.getItem('color-scheme');
+      if (savedScheme === 'light' || savedScheme === 'dark') {
+        document.querySelector('meta[name="color-scheme"]').content = savedScheme;
+      }
+    } catch (_) {}
+  </script>
+  <title>PushGard — Real Form. Real Rivals. 60 Seconds.</title>
+  <meta name="description" content="PushGard — Head-to-head push-up rivalry built for gym partners and athletes. On-device 3D form tracking, 60-second matches, and Win/Loss EGO standing." />
+  <meta name="theme-color" content="#0D0F13" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F6F7F5" media="(prefers-color-scheme: light)" />
   <link rel="icon" type="image/png" href="app/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@700;800&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-carbon: #0B0B0F;
-      --card-slate: #1B1A26;
-      --card-elevated: #252433;
-      --volt-lime: #D4FF2A;
-      --olive-chevron: #6E7F29;
-      --coral-fix: #FF8A7A;
-      --text-white: #FFFFFF;
-      --text-muted: #A3A5B5;
-      --text-dim: #6C6E7E;
+      color-scheme: light dark;
+
+      /* Adaptive eye-friendly athletic palette via light-dark() */
+      --bg-canvas: light-dark(#F6F7F5, #0D0F13);
+      --bg-surface: light-dark(#FFFFFF, #151820);
+      --bg-elevated: light-dark(#ECEEE9, #1D212C);
+      --bg-header: light-dark(rgba(246, 247, 245, 0.84), rgba(13, 15, 19, 0.84));
+      --border-subtle: light-dark(rgba(18, 21, 28, 0.09), rgba(241, 243, 246, 0.08));
+      --border-strong: light-dark(rgba(18, 21, 28, 0.16), rgba(241, 243, 246, 0.15));
+
+      --text-primary: light-dark(#12151C, #F1F3F6);
+      --text-secondary: light-dark(#4B5263, #9CA3B4);
+      --text-muted: light-dark(#6B7280, #6F7789);
+
+      /* Precision Volt Lime brand accent + high-contrast text variant for light mode */
+      --volt: #D4FF2A;
+      --volt-ink: #111318;
+      --accent-text: light-dark(#476000, #D4FF2A);
+      --accent-soft: light-dark(rgba(71, 96, 0, 0.10), rgba(212, 255, 42, 0.12));
+      --accent-border: light-dark(rgba(71, 96, 0, 0.28), rgba(212, 255, 42, 0.28));
+
+      --coral-text: light-dark(#B83B2B, #FF8A7A);
+      --coral-soft: light-dark(rgba(184, 59, 43, 0.10), rgba(255, 138, 122, 0.14));
+
+      --shadow-card: light-dark(
+        0 10px 30px rgba(18, 21, 28, 0.06),
+        0 16px 40px rgba(0, 0, 0, 0.36)
+      );
+      --shadow-phone: light-dark(
+        0 24px 60px rgba(18, 21, 28, 0.14),
+        0 28px 70px rgba(0, 0, 0, 0.65)
+      );
+
+      &:has(> head > meta[name="color-scheme"][content="dark"]) {
+        color-scheme: dark;
+      }
+      &:has(> head > meta[name="color-scheme"][content="light"]) {
+        color-scheme: light;
+      }
     }
 
-    * {
+    *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -31,306 +71,468 @@
 
     html {
       scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
 
     body {
-      background-color: var(--bg-carbon);
-      background-image:
-        radial-gradient(circle at 78% 18%, rgba(212, 255, 42, 0.08) 0%, transparent 42%),
-        radial-gradient(circle at 12% 72%, rgba(27, 26, 38, 0.8) 0%, transparent 48%);
-      color: var(--text-white);
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
       min-height: 100vh;
       overflow-x: hidden;
     }
 
-    .container {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 28px 24px 72px;
+    /* Subtle ambient backdrop glow — gentle on eyes */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(640px circle at 82% 8%, light-dark(rgba(162, 204, 0, 0.09), rgba(212, 255, 42, 0.055)), transparent 65%),
+        radial-gradient(560px circle at 10% 78%, light-dark(rgba(18, 21, 28, 0.04), rgba(110, 127, 41, 0.07)), transparent 60%);
     }
 
-    /* Header */
-    .navbar {
+    a {
+      color: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent-text);
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding-inline: clamp(18px, 4vw, 32px);
+    }
+
+    /* Sticky Glass Navigation */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: var(--bg-header);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-inner {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--card-slate);
-      flex-wrap: wrap;
+      justify-content: space-between;
       gap: 16px;
+      min-height: 70px;
     }
 
     .brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       text-decoration: none;
-      color: var(--text-white);
+      flex-shrink: 0;
     }
 
     .brand-wordmark {
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 24px;
-      letter-spacing: 3.5px;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: 2.8px;
       text-transform: uppercase;
     }
 
-    .nav-actions {
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-link {
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: 10px;
+      transition: color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+
+    .nav-right {
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
     }
 
-    .badge-pill {
+    .version-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--accent-text);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      padding: 5px 10px;
+      border-radius: 99px;
+      letter-spacing: 0.4px;
+    }
+
+    /* Theme Toggle — CSS-driven state visibility for no-JS resilience */
+    .theme-toggle {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: var(--card-slate);
-      color: var(--volt-lime);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 8px 14px;
-      border-radius: 99px;
-      letter-spacing: 1px;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease;
     }
 
-    .nav-jump {
-      color: var(--text-muted);
-      text-decoration: none;
+    .theme-toggle:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    /* Show "to-dark" (moon) in light mode, "to-light" (sun) in dark mode */
+    .theme-toggle .icon-to-light { display: none; }
+    .theme-toggle .icon-to-dark { display: inline-flex; }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-toggle .icon-to-light {
+        display: inline-flex;
+      }
+      :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-toggle .icon-to-dark {
+        display: none;
+      }
+    }
+
+    :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .icon-to-light {
+      display: inline-flex;
+    }
+    :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .icon-to-dark {
+      display: none;
+    }
+
+    @media (max-width: 820px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
       font-family: 'Space Grotesk', sans-serif;
       font-weight: 700;
+      font-size: 14.5px;
+      letter-spacing: 0.4px;
+      text-decoration: none;
+      padding: 14px 22px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
+    }
+
+    .btn-primary {
+      background: var(--volt);
+      color: var(--volt-ink);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.92;
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-text);
+      color: var(--accent-text);
+    }
+
+    .btn-subtle {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
       font-size: 13px;
-      letter-spacing: 1.2px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      transition: color 0.15s ease, background-color 0.15s ease;
+      padding: 10px 15px;
+      border-radius: 10px;
     }
 
-    .nav-jump:hover {
-      color: var(--volt-lime);
-      background: var(--card-slate);
+    .btn-subtle:hover {
+      border-color: var(--border-strong);
     }
 
-    /* Main Grid */
+    .btn-sm {
+      padding: 9px 14px;
+      font-size: 13px;
+      border-radius: 10px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .btn {
+        transition: transform 0.15s ease, background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: scale(0.985);
+      }
+    }
+
+    /* Hero Section */
+    .hero {
+      padding-block: clamp(44px, 7vw, 84px) clamp(48px, 6vw, 72px);
+    }
+
     .hero-grid {
       display: grid;
-      grid-template-columns: 1.06fr 0.94fr;
-      gap: 48px;
+      grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+      gap: clamp(32px, 5vw, 64px);
       align-items: center;
-      margin-top: 38px;
     }
 
     @media (max-width: 960px) {
       .hero-grid {
         grid-template-columns: 1fr;
-        gap: 36px;
       }
     }
 
-    .kicker {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 2.2px;
-      color: var(--volt-lime);
-      text-transform: uppercase;
-      margin-bottom: 12px;
+    .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--accent-text);
+      margin-bottom: 18px;
     }
 
-    .live-dot {
-      width: 8px;
-      height: 8px;
+    .eyebrow-dot {
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: var(--volt-lime);
-      display: inline-block;
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-      .live-dot {
-        animation: pulse-dot 2.2s ease-in-out infinite;
-      }
-      @keyframes pulse-dot {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.45; transform: scale(1.25); }
-      }
+      background: var(--accent-text);
     }
 
     .hero-title {
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: clamp(38px, 5vw, 60px);
-      line-height: 1.02;
-      letter-spacing: -1px;
-      margin-bottom: 18px;
+      font-weight: 700;
+      font-size: clamp(36px, 5.2vw, 58px);
+      line-height: 1.06;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      max-width: 14ch;
     }
 
-    .hero-title span {
-      color: var(--volt-lime);
+    .hero-title em {
+      font-style: normal;
+      color: var(--accent-text);
     }
 
-    .hero-sub {
-      color: var(--text-muted);
-      font-size: 17px;
-      line-height: 1.55;
-      max-width: 560px;
-      margin-bottom: 26px;
-    }
-
-    /* CTA Buttons */
-    .cta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
+    .hero-copy {
+      color: var(--text-secondary);
+      font-size: clamp(16px, 1.8vw, 18px);
+      line-height: 1.65;
+      max-width: 52ch;
       margin-bottom: 28px;
     }
 
-    .btn-volt {
-      display: inline-flex;
+    .cta-group {
+      display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: var(--volt-lime);
-      color: var(--bg-carbon);
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 15px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      text-decoration: none;
-      padding: 17px 26px;
-      border-radius: 18px;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.14s ease, opacity 0.14s ease;
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-      .btn-volt {
-        transition: transform 0.14s ease, background-color 0.14s ease, opacity 0.14s ease;
-      }
-      .btn-volt:hover {
-        transform: translateY(-2px);
-      }
-      .btn-volt:active {
-        transform: scale(0.98);
-      }
-    }
-
-    .btn-volt:hover {
-      opacity: 0.94;
-    }
-
-    .btn-slate {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: var(--card-slate);
-      color: var(--text-white);
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 1.3px;
-      text-transform: uppercase;
-      text-decoration: none;
-      padding: 17px 22px;
-      border-radius: 18px;
-      border: 1.5px solid var(--card-elevated);
-      cursor: pointer;
-      transition: border-color 0.14s ease, color 0.14s ease;
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-      .btn-slate {
-        transition: transform 0.14s ease, border-color 0.14s ease, color 0.14s ease;
-      }
-      .btn-slate:hover {
-        transform: translateY(-2px);
-      }
-    }
-
-    .btn-slate:hover {
-      border-color: var(--volt-lime);
-      color: var(--volt-lime);
-    }
-
-    /* Quick 3-step onboarding strip */
-    .steps-strip {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
-    @media (max-width: 640px) {
-      .steps-strip {
+    .cta-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+    }
+
+    /* Quiet Athletic Proof Metrics */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    @media (max-width: 540px) {
+      .metrics-bar {
         grid-template-columns: 1fr;
+        gap: 16px;
       }
     }
 
-    .step-chip {
-      background: var(--card-slate);
-      border-radius: 16px;
-      padding: 14px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .step-num {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--volt-lime);
-      letter-spacing: 1.2px;
-      margin-bottom: 4px;
-    }
-
-    .step-title {
+    .metric-val {
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 15px;
-      margin-bottom: 3px;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
     }
 
-    .step-desc {
+    .metric-label {
+      font-size: 13px;
       color: var(--text-muted);
-      font-size: 12.5px;
-      line-height: 1.4;
+      margin-top: 2px;
     }
 
-    /* Interactive Phone Showcase */
-    .phone-showcase {
+    /* Phone Showcase with Instant Lazy Launch */
+    .phone-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    .phone-bezel {
-      width: 392px;
-      max-width: 100%;
-      height: 780px;
-      background: var(--bg-carbon);
-      border-radius: 44px;
-      border: 6px solid var(--card-slate);
-      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(212, 255, 42, 0.22);
+    .phone-frame {
+      width: min(376px, 100%);
+      aspect-ratio: 9 / 18.2;
+      max-height: 720px;
+      border-radius: 40px;
+      background: #0D0F13;
+      border: 6px solid var(--bg-elevated);
+      box-shadow: var(--shadow-phone), 0 0 0 1px var(--border-strong);
       overflow: hidden;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
-    .phone-bezel iframe {
+    .phone-cover {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 28px 24px 26px;
+      background:
+        radial-gradient(280px circle at 50% 18%, rgba(212, 255, 42, 0.10), transparent 70%),
+        linear-gradient(180deg, #141720 0%, #0D0F13 100%);
+      color: #F1F3F6;
+    }
+
+    .phone-notch {
+      width: 92px;
+      height: 22px;
+      border-radius: 99px;
+      background: #07080B;
+      margin: 0 auto 20px;
+    }
+
+    .phone-status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #D4FF2A;
+      background: rgba(212, 255, 42, 0.12);
+      padding: 6px 11px;
+      border-radius: 99px;
+      width: fit-content;
+      margin-bottom: 16px;
+    }
+
+    .phone-cover-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .phone-cover-sub {
+      font-size: 14px;
+      color: #9CA3B4;
+      line-height: 1.55;
+      margin-bottom: 22px;
+    }
+
+    .phone-preview-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .phone-preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-block: 7px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 13px;
+    }
+
+    .phone-preview-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .phone-preview-row span:first-child {
+      color: #9CA3B4;
+    }
+
+    .phone-preview-row strong {
+      font-family: 'JetBrains Mono', monospace;
+      color: #F1F3F6;
+      font-size: 12.5px;
+    }
+
+    .phone-frame iframe {
       width: 100%;
       height: 100%;
-      border: none;
-      background: var(--bg-carbon);
+      border: 0;
+      background: #0D0F13;
+      display: block;
     }
 
-    .phone-controls {
+    .phone-toolbar {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -339,526 +541,850 @@
       flex-wrap: wrap;
     }
 
-    .phone-pill-btn {
-      background: var(--card-slate);
-      color: var(--text-muted);
-      border: 1px solid var(--card-elevated);
-      border-radius: 99px;
-      padding: 7px 14px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+    /* Section Headings */
+    .section {
+      padding-block: clamp(44px, 6vw, 76px);
+    }
+
+    .section-head {
+      max-width: 640px;
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
       font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: color 0.14s ease, border-color 0.14s ease;
+      font-size: clamp(26px, 3.6vw, 38px);
+      line-height: 1.14;
+      letter-spacing: -0.025em;
+      margin-bottom: 10px;
     }
 
-    .phone-pill-btn:hover {
-      color: var(--volt-lime);
-      border-color: var(--volt-lime);
+    .section-sub {
+      color: var(--text-secondary);
+      font-size: 16px;
+      line-height: 1.6;
     }
 
-    /* Interactive Playground Section */
-    .playground {
-      margin-top: 64px;
-      background: var(--card-slate);
-      border-radius: 28px;
-      padding: 28px;
-      border: 1px solid var(--card-elevated);
+    /* 3-Pillar Lifestyle Grid */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
     }
 
-    @media (max-width: 640px) {
-      .playground {
-        padding: 20px 16px;
+    @media (max-width: 840px) {
+      .pillars-grid {
+        grid-template-columns: 1fr;
       }
     }
 
-    .playground-head {
+    .pillar-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pillar-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-text);
+      letter-spacing: 1px;
+    }
+
+    .pillar-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+    }
+
+    .pillar-copy {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      line-height: 1.6;
+    }
+
+    /* Interactive Standard Lab */
+    .lab-shell {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 26px;
+      padding: clamp(20px, 3.5vw, 34px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .lab-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 22px;
+      gap: 20px;
+      margin-bottom: 24px;
     }
 
-    .playground-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: clamp(24px, 3vw, 32px);
-      line-height: 1.1;
-    }
-
-    .playground-sub {
-      color: var(--text-muted);
-      font-size: 14.5px;
-      margin-top: 6px;
-    }
-
-    /* Accessible Tabs */
+    /* Accessible single-row scrolling tablist with non-color underline indicator */
     .tablist {
       display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      background: var(--bg-carbon);
-      padding: 6px;
-      border-radius: 16px;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      scroll-snap-type: inline proximity;
+      border-bottom: 1px solid var(--border-subtle);
+      max-width: 100%;
+    }
+
+    .tablist::-webkit-scrollbar {
+      display: none;
     }
 
     .tab-btn {
+      position: relative;
+      flex: none;
+      scroll-snap-align: start;
       background: transparent;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       border: none;
-      border-radius: 12px;
-      padding: 10px 16px;
+      padding: 12px 16px 14px;
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 1px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.3px;
       cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+      transition: color 0.16s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
     }
 
     .tab-btn[aria-selected="true"] {
-      background: var(--volt-lime);
-      color: var(--bg-carbon);
+      color: var(--accent-text);
     }
 
-    .tab-btn:hover:not([aria-selected="true"]) {
-      color: var(--text-white);
+    .tab-btn[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      inset: auto 12px 0;
+      border-block-end: 3px solid var(--accent-text);
     }
 
-    .panel-box {
-      background: var(--bg-carbon);
-      border-radius: 22px;
-      padding: 26px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    /* IMPORTANT: No padding/border/margin on [role="tabpanel"] itself so hidden="until-found" collapses cleanly */
+    .panel-inner {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: clamp(18px, 3vw, 28px);
     }
 
-    /* Tab 1: Tug-of-War Simulator */
-    .tug-scoreboard {
+    /* Lab Panel 1: Form & Depth Standard */
+    .lab-two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 28px;
+      align-items: center;
+    }
+
+    @media (max-width: 780px) {
+      .lab-two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .diagram-stage {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .status-pill.pass {
+      background: var(--accent-soft);
+      color: var(--accent-text);
+    }
+
+    .status-pill.warn {
+      background: var(--coral-soft);
+      color: var(--coral-text);
+    }
+
+    .control-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .slider-label-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
     }
 
-    .score-side {
+    .slider-readout {
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-text);
+      cursor: pointer;
+      height: 6px;
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip-btn {
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .chip-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--accent-text);
+    }
+
+    .chip-btn[aria-pressed="true"] {
+      background: var(--coral-soft);
+      border-color: var(--coral-text);
+      color: var(--coral-text);
+    }
+
+    .coaching-note {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      line-height: 1.6;
+    }
+
+    /* Lab Panel 2: 60s Head-to-Head Pacing */
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .score-block {
       display: flex;
       align-items: baseline;
       gap: 10px;
     }
 
-    .score-label {
+    .score-name {
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 1.2px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
     }
 
-    .score-num {
+    .score-value {
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 38px;
+      font-weight: 700;
+      font-size: 36px;
       line-height: 1;
     }
 
     .tug-track {
       position: relative;
-      height: 22px;
+      height: 18px;
       width: 100%;
-      background: var(--card-slate);
+      background: var(--bg-elevated);
       border-radius: 99px;
       overflow: hidden;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
 
     .tug-fill {
       height: 100%;
       width: 50%;
-      background: var(--volt-lime);
+      background: var(--volt);
       border-radius: 99px;
-      transition: width 0.2s ease;
+      transition: width 0.22s ease;
     }
 
-    .tug-center-line {
+    .tug-midline {
       position: absolute;
       left: 50%;
       top: 0;
       bottom: 0;
       width: 2px;
-      background: #FFFFFF;
+      background: var(--text-primary);
+      opacity: 0.45;
       transform: translateX(-50%);
-      opacity: 0.7;
     }
 
-    .sim-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
+    .sim-banner {
       margin-top: 18px;
-    }
-
-    .sim-status-banner {
-      margin-top: 14px;
-      padding: 12px 16px;
-      border-radius: 14px;
-      background: var(--card-slate);
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
       font-family: 'JetBrains Mono', monospace;
       font-size: 12.5px;
-      color: var(--volt-lime);
+      color: var(--text-secondary);
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    /* Tab 2: Angle & Form Checker */
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      align-items: center;
-    }
-
-    @media (max-width: 760px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .skeleton-stage {
-      background: var(--card-slate);
-      border-radius: 18px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 220px;
-    }
-
-    .range-group {
-      display: flex;
-      flex-direction: column;
       gap: 10px;
     }
 
-    .range-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--volt-lime);
-      cursor: pointer;
-      height: 8px;
-    }
-
-    .form-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      font-weight: 800;
-      margin-top: 12px;
-    }
-
-    .form-pill.pass {
-      background: rgba(212, 255, 42, 0.14);
-      color: var(--volt-lime);
-    }
-
-    .form-pill.warn {
-      background: rgba(255, 138, 122, 0.14);
-      color: var(--coral-fix);
-    }
-
-    .toggle-btn {
-      background: var(--card-slate);
-      color: var(--text-white);
-      border: 1.5px solid var(--card-elevated);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 12px;
-      width: fit-content;
-    }
-
-    .toggle-btn[aria-pressed="true"] {
-      border-color: var(--coral-fix);
-      color: var(--coral-fix);
-    }
-
-    /* Tab 3: Elo Calculator */
-    .elo-grid {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 24px;
-      align-items: center;
-    }
-
-    @media (max-width: 760px) {
-      .elo-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .elo-result-card {
-      background: var(--card-slate);
+    /* Lab Panel 3: EGO Standing Calculator */
+    .elo-result-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
       border-radius: 18px;
-      padding: 20px;
+      padding: 24px;
       text-align: center;
     }
 
-    .elo-delta-big {
+    .elo-delta {
       font-family: 'Space Grotesk', sans-serif;
-      font-weight: 800;
-      font-size: 46px;
-      color: var(--volt-lime);
+      font-weight: 700;
+      font-size: 44px;
       line-height: 1.05;
-      margin: 8px 0;
+      margin: 8px 0 6px;
+      color: var(--accent-text);
     }
 
-    .tier-badge {
-      display: inline-block;
-      padding: 6px 14px;
-      border-radius: 99px;
-      background: rgba(212, 255, 42, 0.14);
-      color: var(--volt-lime);
+    .elo-new {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+    }
+
+    .tier-ladder {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .tier-item {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 1px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 99px;
+      color: var(--text-muted);
+      background: var(--bg-elevated);
+      border: 1px solid transparent;
     }
 
-    /* Footer encouragement */
-    .bottom-cta {
-      margin-top: 42px;
-      background: linear-gradient(135deg, rgba(212, 255, 42, 0.12), rgba(27, 26, 38, 0.95));
-      border: 1px solid rgba(212, 255, 42, 0.25);
-      border-radius: 24px;
-      padding: 28px;
+    .tier-item.active {
+      color: var(--accent-text);
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+    }
+
+    /* Integrity / Trust Strip */
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    @media (max-width: 780px) {
+      .trust-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .trust-item {
+      padding: 22px 24px;
+      border-radius: 18px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .trust-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .trust-copy {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    /* Closing Editorial CTA */
+    .closing-cta {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 26px;
+      padding: clamp(28px, 4vw, 44px);
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 24px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .closing-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: clamp(24px, 3vw, 32px);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+
+    .closing-sub {
+      color: var(--text-secondary);
+      font-size: 15px;
+      max-width: 48ch;
+    }
+
+    .site-footer {
+      margin-top: 40px;
+      padding-block: 24px 44px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Progressive-enhancement scroll reveal (compositor-only, respects reduced-motion) */
+    @media (prefers-reduced-motion: no-preference) {
+      @supports ((animation-timeline: view()) and (animation-range: entry)) {
+        @keyframes soft-reveal {
+          from {
+            opacity: 0.15;
+            transform: translateY(18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .reveal {
+          animation: soft-reveal auto linear both;
+          animation-timeline: view();
+          animation-range: entry 0% entry 32%;
+        }
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="navbar">
+  <header class="site-header">
+    <div class="container nav-inner">
       <a href="./" class="brand">
-        <svg width="38" height="38" viewBox="0 0 100 112" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 100 112" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M50 4 C66 11 82 14 92 14 C92 48 86 82 50 108 C14 82 8 48 8 14 C18 14 34 11 50 4 Z" fill="#D4FF2A"/>
           <path d="M50 24 L75 49 L65.5 58.5 L50 43 L34.5 58.5 L25 49 Z" fill="#6E7F29"/>
           <path d="M50 46 L75 71 L65.5 80.5 L50 65 L34.5 80.5 L25 71 Z" fill="#101114"/>
         </svg>
         <span class="brand-wordmark">PUSHGARD</span>
       </a>
-      <div class="nav-actions">
-        <a href="#playground" class="nav-jump">INTERACTIVE DEMO</a>
-        <div class="badge-pill">v1.0.1 OFFICIAL · +15 LEAD = KO</div>
-      </div>
-    </header>
 
-    <main class="hero-grid">
-      <section>
-        <div class="kicker">
-          <span class="live-dot" aria-hidden="true"></span>
-          <span>STEP INTO THE 60-SECOND ARENA</span>
-        </div>
-        <h1 class="hero-title">DEFEND YOUR <span>EGO</span> IN 60 SECONDS.</h1>
-        <p class="hero-sub">
-          Tap into the live app on the right or test the battle mechanics below. Every clean push-up drives the Tug-of-War bar toward your rival—hit a <strong>+15 rep lead</strong> for an instant <strong>KO Victory</strong>, or hold the lead when the clock hits zero.
-        </p>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#standard" class="nav-link">The Standard</a>
+        <a href="#lab" class="nav-link">Interactive Lab</a>
+        <a href="#integrity" class="nav-link">Privacy &amp; Fair Play</a>
+      </nav>
 
-        <div class="cta-row">
-          <a href="app/index.html" class="btn-volt">
-            <span>TRY LIVE WEB ARENA</span>
-          </a>
-          <a id="apk-download-link" href="../../releases/latest" class="btn-slate">
-            <span>DOWNLOAD ANDROID APK</span>
-          </a>
-        </div>
-
-        <div class="steps-strip">
-          <div class="step-chip">
-            <div class="step-num">01 · FRAME</div>
-            <div class="step-title">Prop Phone Side-On</div>
-            <div class="step-desc">3 instant camera checks verify body, angle &amp; room light.</div>
-          </div>
-          <div class="step-chip">
-            <div class="step-num">02 · BATTLE</div>
-            <div class="step-title">Push to +15 Lead</div>
-            <div class="step-desc">Every &le;90&deg; rep swings the Tug-of-War bar by 3.33%.</div>
-          </div>
-          <div class="step-chip">
-            <div class="step-num">03 · CLIMB</div>
-            <div class="step-title">Earn Win/Loss EGO</div>
-            <div class="step-desc">Beat rivals to rise from Spartan to God of War (1,900+).</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="phone-showcase" aria-label="Interactive PushGard App Preview">
-        <div class="phone-bezel">
-          <iframe id="app-iframe" src="app/index.html" title="PushGard Official Live Web App" allow="camera"></iframe>
-        </div>
-        <div class="phone-controls">
-          <button type="button" id="reload-app-btn" class="phone-pill-btn">RELOAD APP</button>
-          <a href="app/index.html" class="phone-pill-btn">OPEN FULLSCREEN &rarr;</a>
-        </div>
-      </section>
-    </main>
-
-    <!-- Interactive Mechanics Playground -->
-    <section id="playground" class="playground" aria-labelledby="playground-heading">
-      <div class="playground-head">
-        <div>
-          <div class="kicker">INTERACTIVE SANDBOX · TRY IT RIGHT HERE</div>
-          <h2 id="playground-heading" class="playground-title">Feel the PushGard Mechanics</h2>
-          <p class="playground-sub">Test the Tug-of-War KO bar, slide the real-time elbow angle checker, and preview your Win/Loss EGO gains.</p>
-        </div>
-
-        <div class="tablist" role="tablist" aria-label="PushGard Interactive Mechanics">
-          <button type="button" role="tab" class="tab-btn" id="tab-tug" aria-selected="true">TUG-OF-WAR KO</button>
-          <button type="button" role="tab" class="tab-btn" id="tab-form" aria-selected="false">FORM CHECKER</button>
-          <button type="button" role="tab" class="tab-btn" id="tab-elo" aria-selected="false">EGO CALCULATOR</button>
-        </div>
-      </div>
-
-      <!-- Panel 1: Tug-of-War KO Simulator -->
-      <div id="panel-tug" role="tabpanel" aria-labelledby="tab-tug" class="panel-box" tabindex="0">
-        <div class="tug-scoreboard">
-          <div class="score-side">
-            <span class="score-label" style="color: var(--volt-lime);">YOU</span>
-            <span id="sim-you-reps" class="score-num" style="color: var(--volt-lime);">0</span>
-          </div>
-          <div id="sim-lead-badge" class="badge-pill">0 LEAD · +15 FOR KO</div>
-          <div class="score-side">
-            <span id="sim-rival-reps" class="score-num" style="color: var(--coral-fix);">0</span>
-            <span class="score-label" style="color: var(--coral-fix);">CYBER_KONG</span>
-          </div>
-        </div>
-
-        <div class="tug-track" aria-label="Tug-of-War dominance bar">
-          <div id="sim-tug-fill" class="tug-fill"></div>
-          <div class="tug-center-line"></div>
-        </div>
-
-        <div class="sim-actions">
-          <button type="button" id="btn-you-rep" class="btn-volt">+1 CLEAN REP</button>
-          <button type="button" id="btn-rival-rep" class="btn-slate">RIVAL +1 REP</button>
-          <button type="button" id="btn-reset-tug" class="phone-pill-btn">RESET MATCH</button>
-        </div>
-
-        <div class="sim-status-banner">
-          <span id="sim-tug-msg">Bar starts 50/50. Tap +1 CLEAN REP to build a +15 knockout lead!</span>
-          <span id="sim-tug-pct" style="color: #FFFFFF;">50.0% CONTROL</span>
-        </div>
-      </div>
-
-      <!-- Panel 2: Live Form & Angle Checker -->
-      <div id="panel-form" role="tabpanel" aria-labelledby="tab-form" class="panel-box" hidden="until-found">
-        <div class="form-grid">
-          <div class="skeleton-stage">
-            <svg width="260" height="170" viewBox="0 0 260 170" aria-label="Interactive push-up elbow angle diagram">
-              <line x1="20" y1="145" x2="240" y2="145" stroke="#252433" stroke-width="4" stroke-linecap="round"/>
-              <!-- Wrist anchored on floor -->
-              <circle cx="185" cy="140" r="6" fill="#D4FF2A"/>
-              <!-- Forearm -->
-              <line id="svg-forearm" x1="185" y1="140" x2="170" y2="95" stroke="#D4FF2A" stroke-width="5" stroke-linecap="round"/>
-              <!-- Elbow -->
-              <circle id="svg-elbow" cx="170" cy="95" r="7" fill="#FFFFFF"/>
-              <!-- Upper arm to shoulder -->
-              <line id="svg-upperarm" x1="170" y1="95" x2="180" y2="48" stroke="#D4FF2A" stroke-width="5" stroke-linecap="round"/>
-              <!-- Torso & Legs -->
-              <line id="svg-torso" x1="180" y1="48" x2="50" y2="132" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
-              <!-- Shoulder & Hip & Ankle -->
-              <circle id="svg-shoulder" cx="180" cy="48" r="7" fill="#D4FF2A"/>
-              <circle id="svg-hip" cx="115" cy="90" r="6" fill="#D4FF2A"/>
-              <circle cx="50" cy="132" r="5" fill="#A3A5B5"/>
+      <div class="nav-right">
+        <span class="version-tag">v1.0.5</span>
+        <button type="button" id="theme-toggle-btn" class="theme-toggle" title="Toggle light or dark appearance">
+          <span class="icon-to-light" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
             </svg>
-            <div id="form-angle-pill" class="form-pill pass">LOCKOUT READY · 165&deg;</div>
+            <span class="sr-only">Switch to light theme</span>
+          </span>
+          <span class="icon-to-dark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+            </svg>
+            <span class="sr-only">Switch to dark theme</span>
+          </span>
+        </button>
+        <a id="apk-nav-link" href="../../releases/latest" class="btn btn-primary btn-sm">Get APK</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">
+            <span class="eyebrow-dot" aria-hidden="true"></span>
+            <span>Athletic Standard · 1v1 Push-Up Rivalry</span>
+          </div>
+          <h1 class="hero-title">Earn your <em>respect</em>. One clean rep at a time.</h1>
+          <p class="hero-copy">
+            Built for gym partners, teammates, and competitors who take real pride in their conditioning. Prop your phone side-on, hold strict form for 60 seconds, and let verified reps decide who owns the ranking.
+          </p>
+
+          <div class="cta-group">
+            <a id="apk-download-link" href="../../releases/latest" class="btn btn-primary">
+              <span>Download Android APK</span>
+              <span aria-hidden="true">&darr;</span>
+            </a>
+            <a href="app/index.html" class="btn btn-secondary">
+              <span>Try Live Web App</span>
+            </a>
+          </div>
+          <p class="cta-meta">Android 7.0+ · v1.0.5 Official Release · Zero video frames uploaded</p>
+
+          <div class="metrics-bar">
+            <div>
+              <div class="metric-val">&le; 90&deg;</div>
+              <div class="metric-label">Verified elbow depth</div>
+            </div>
+            <div>
+              <div class="metric-val">60 sec</div>
+              <div class="metric-label">Head-to-head match clock</div>
+            </div>
+            <div>
+              <div class="metric-val">+15 lead</div>
+              <div class="metric-label">Early finish knockout margin</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lazy-loaded Interactive App Frame -->
+        <div class="phone-wrap" aria-label="PushGard Mobile App Preview">
+          <div class="phone-frame" id="phone-frame">
+            <div class="phone-cover" id="phone-cover">
+              <div>
+                <div class="phone-notch" aria-hidden="true"></div>
+                <div class="phone-status-chip">LIVE APP PREVIEW · v1.0.5</div>
+                <h2 class="phone-cover-title">See how PushGard runs on your phone.</h2>
+                <p class="phone-cover-sub">
+                  Explore the home dashboard, EGO standing ladder, match log, and live framing check right inside this frame.
+                </p>
+
+                <div class="phone-preview-card">
+                  <div class="phone-preview-row">
+                    <span>Bottom Depth</span>
+                    <strong>&le; 90&deg; ELBOW</strong>
+                  </div>
+                  <div class="phone-preview-row">
+                    <span>Top Lockout</span>
+                    <strong>&ge; 160&deg; EXTENSION</strong>
+                  </div>
+                  <div class="phone-preview-row">
+                    <span>Plank Alignment</span>
+                    <strong>&le; 15&deg; HIP LINE</strong>
+                  </div>
+                  <div class="phone-preview-row">
+                    <span>Camera Privacy</span>
+                    <strong>ON-DEVICE ONLY</strong>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" id="launch-preview-btn" class="btn btn-primary" style="width: 100%;">
+                Launch Interactive Preview
+              </button>
+            </div>
           </div>
 
-          <div class="range-group">
-            <div class="range-header">
-              <label for="elbow-slider" style="color: var(--volt-lime); font-weight: 800;">ELBOW ANGLE (SHOULDER–ELBOW–WRIST)</label>
-              <span id="elbow-readout" style="color: #FFFFFF; font-weight: 800;">165&deg;</span>
-            </div>
-            <input type="range" id="elbow-slider" min="65" max="180" step="1" value="165" aria-valuetext="165 degrees" />
-            <p id="form-coaching-text" style="color: var(--text-muted); font-size: 14px; line-height: 1.5;">
-              Slide left toward <strong>90&deg;</strong> to test bottom depth validation, then slide back past <strong>160&deg;</strong> for full lockout.
+          <div class="phone-toolbar">
+            <button type="button" id="reload-app-btn" class="btn btn-subtle" hidden>Reload App</button>
+            <a href="app/index.html" class="btn btn-subtle">Open Fullscreen &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3-Pillar Lifestyle Pitch -->
+    <section id="standard" class="section reveal">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">The Training Standard</div>
+          <h2 class="section-title">No half-reps. No gym-floor arguments.</h2>
+          <p class="section-sub">
+            PushGard turns everyday push-up sessions into an honest benchmark you can defend against training partners anywhere.
+          </p>
+        </div>
+
+        <div class="pillars-grid">
+          <article class="pillar-card">
+            <div class="pillar-num">01 · FORM FIRST</div>
+            <h3 class="pillar-title">Real Biomechanics, Not Taps</h3>
+            <p class="pillar-copy">
+              On-device 3D pose tracking measures your shoulder–elbow–wrist angle and hip line every frame. Shallow reps and sagging planks are filtered out automatically.
             </p>
-            <button type="button" id="btn-hip-sag" class="toggle-btn" aria-pressed="false">
-              HIP ALIGNMENT: STRAIGHT (&le; 15&deg;)
-            </button>
-          </div>
+          </article>
+
+          <article class="pillar-card">
+            <div class="pillar-num">02 · 60-SECOND STANDARD</div>
+            <h3 class="pillar-title">Head-to-Head Pacing</h3>
+            <p class="pillar-copy">
+              Challenge a teammate on your own schedule. Every verified rep drives the dominance bar—pull ahead by +15 clean reps to close the match early, or hold the lead at 0:00.
+            </p>
+          </article>
+
+          <article class="pillar-card">
+            <div class="pillar-num">03 · EARNED STANDING</div>
+            <h3 class="pillar-title">Win/Loss EGO Rating</h3>
+            <p class="pillar-copy">
+              Climb from Spartan (1,000) through Vanguard and Titan to God of War (1,900+). Beating higher-ranked athletes moves your standing faster; every match counts.
+            </p>
+          </article>
         </div>
       </div>
+    </section>
 
-      <!-- Panel 3: Win/Loss EGO Calculator -->
-      <div id="panel-elo" role="tabpanel" aria-labelledby="tab-elo" class="panel-box" hidden="until-found">
-        <div class="elo-grid">
-          <div class="range-group">
-            <div class="range-header">
-              <label for="you-ego-slider" style="color: var(--volt-lime); font-weight: 800;">YOUR CURRENT EGO</label>
-              <span id="you-ego-val" style="color: #FFFFFF; font-weight: 800;">1,780</span>
+    <!-- Interactive Lab -->
+    <section id="lab" class="section reveal" aria-labelledby="lab-heading">
+      <div class="container">
+        <div class="lab-shell">
+          <div class="lab-header">
+            <div>
+              <div class="eyebrow">Interactive Standard Lab</div>
+              <h2 id="lab-heading" class="section-title" style="margin-bottom: 6px;">Test the rules before your first set.</h2>
+              <p class="section-sub">Inspect the exact depth angle, head-to-head pacing bar, and Win/Loss EGO math used in PushGard.</p>
             </div>
-            <input type="range" id="you-ego-slider" min="800" max="2200" step="10" value="1780" aria-valuetext="1780 EGO" />
 
-            <div class="range-header" style="margin-top: 10px;">
-              <label for="opp-ego-slider" style="color: var(--coral-fix); font-weight: 800;">OPPONENT EGO</label>
-              <span id="opp-ego-val" style="color: #FFFFFF; font-weight: 800;">1,860</span>
-            </div>
-            <input type="range" id="opp-ego-slider" min="800" max="2200" step="10" value="1860" aria-valuetext="1860 EGO" />
-
-            <div class="sim-actions" style="margin-top: 10px;">
-              <button type="button" class="btn-volt elo-outcome-btn" data-score="1">WIN MATCH</button>
-              <button type="button" class="btn-slate elo-outcome-btn" data-score="0.5">60s DRAW</button>
-              <button type="button" class="btn-slate elo-outcome-btn" data-score="0">LOSS</button>
+            <div class="tablist" role="tablist" aria-label="PushGard Standard Lab">
+              <button type="button" role="tab" class="tab-btn" id="tab-form" aria-selected="true">Form Standard</button>
+              <button type="button" role="tab" class="tab-btn" id="tab-pacing" aria-selected="false">60s Head-to-Head</button>
+              <button type="button" role="tab" class="tab-btn" id="tab-ego" aria-selected="false">EGO Standing</button>
             </div>
           </div>
 
-          <div class="elo-result-card">
-            <div class="spec-card-label" style="font-size: 11px; color: var(--text-muted); letter-spacing: 1.4px;">PROJECTED RATING CHANGE</div>
-            <div id="elo-delta-display" class="elo-delta-big">+15 EGO</div>
-            <div id="elo-new-rating" style="font-size: 15px; color: #FFFFFF; font-weight: 700; margin-bottom: 12px;">New EGO: 1,795</div>
-            <span id="elo-tier-badge" class="tier-badge">TITAN II</span>
+          <!-- Panel 1: Form & Depth Standard -->
+          <div id="panel-form" role="tabpanel" aria-labelledby="tab-form" tabindex="0">
+            <div class="panel-inner">
+              <div class="lab-two-col">
+                <div class="diagram-stage">
+                  <svg width="280" height="175" viewBox="0 0 260 170" aria-label="Interactive push-up elbow angle and hip alignment diagram">
+                    <line x1="20" y1="146" x2="240" y2="146" stroke="currentColor" stroke-opacity="0.16" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="185" cy="140" r="6" fill="var(--accent-text)"/>
+                    <line id="svg-forearm" x1="185" y1="140" x2="170" y2="95" stroke="var(--accent-text)" stroke-width="5" stroke-linecap="round"/>
+                    <circle id="svg-elbow" cx="170" cy="95" r="7" fill="var(--text-primary)"/>
+                    <line id="svg-upperarm" x1="170" y1="95" x2="180" y2="48" stroke="var(--accent-text)" stroke-width="5" stroke-linecap="round"/>
+                    <line id="svg-torso" x1="180" y1="48" x2="50" y2="132" stroke="var(--text-primary)" stroke-width="6" stroke-linecap="round"/>
+                    <circle id="svg-shoulder" cx="180" cy="48" r="7" fill="var(--accent-text)"/>
+                    <circle id="svg-hip" cx="115" cy="90" r="6" fill="var(--accent-text)"/>
+                    <circle cx="50" cy="132" r="5" fill="var(--text-muted)"/>
+                  </svg>
+                  <div id="form-angle-pill" class="status-pill pass">LOCKOUT READY · 165&deg;</div>
+                </div>
+
+                <div class="control-stack">
+                  <div>
+                    <div class="slider-label-row">
+                      <label for="elbow-slider">ELBOW ANGLE (SHOULDER–ELBOW–WRIST)</label>
+                      <span id="elbow-readout" class="slider-readout">165&deg;</span>
+                    </div>
+                    <input type="range" id="elbow-slider" min="65" max="180" step="1" value="165" aria-valuetext="165 degrees" />
+                  </div>
+
+                  <div class="preset-row" aria-label="Form presets">
+                    <button type="button" class="chip-btn form-preset" data-angle="170">Top Lockout (170&deg;)</button>
+                    <button type="button" class="chip-btn form-preset" data-angle="115">Half Rep (115&deg;)</button>
+                    <button type="button" class="chip-btn form-preset" data-angle="85">Clean Depth (85&deg;)</button>
+                  </div>
+
+                  <p id="form-coaching-text" class="coaching-note">
+                    Slide down to <strong>&le; 90&deg;</strong> to hit verified bottom depth, then extend back past <strong>160&deg;</strong> for full top lockout.
+                  </p>
+
+                  <div>
+                    <button type="button" id="btn-hip-sag" class="chip-btn" aria-pressed="false">
+                      Hip Alignment: Straight (&le; 15&deg;)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 2: 60s Head-to-Head Pacing -->
+          <div id="panel-pacing" role="tabpanel" aria-labelledby="tab-pacing" hidden="until-found">
+            <div class="panel-inner">
+              <div class="scoreboard">
+                <div class="score-block">
+                  <span class="score-name" style="color: var(--accent-text);">YOU</span>
+                  <span id="sim-you-reps" class="score-value" style="color: var(--accent-text);">0</span>
+                </div>
+                <div id="sim-lead-badge" class="status-pill pass">EVEN · +15 LEAD FINISHES EARLY</div>
+                <div class="score-block">
+                  <span id="sim-rival-reps" class="score-value" style="color: var(--coral-text);">0</span>
+                  <span class="score-name" style="color: var(--coral-text);">PARTNER</span>
+                </div>
+              </div>
+
+              <div class="tug-track" role="img" aria-label="Head-to-head dominance bar">
+                <div id="sim-tug-fill" class="tug-fill"></div>
+                <div class="tug-midline"></div>
+              </div>
+
+              <div class="cta-group" style="margin-bottom: 0;">
+                <button type="button" id="btn-you-rep" class="btn btn-primary btn-sm">+1 Clean Rep</button>
+                <button type="button" id="btn-you-surge" class="btn btn-secondary btn-sm">+5 Rep Surge</button>
+                <button type="button" id="btn-rival-rep" class="btn btn-secondary btn-sm">Partner +1 Rep</button>
+                <button type="button" id="btn-reset-tug" class="btn btn-subtle">Reset</button>
+              </div>
+
+              <div class="sim-banner">
+                <span id="sim-tug-msg">Every clean rep shifts the dominance bar by 3.33%. Hold the lead at 0:00 or hit +15 to finish early.</span>
+                <strong id="sim-tug-pct" style="color: var(--text-primary);">50.0% CONTROL</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 3: EGO Standing Calculator -->
+          <div id="panel-ego" role="tabpanel" aria-labelledby="tab-ego" hidden="until-found">
+            <div class="panel-inner">
+              <div class="lab-two-col">
+                <div class="control-stack">
+                  <div>
+                    <div class="slider-label-row">
+                      <label for="you-ego-slider">YOUR CURRENT EGO</label>
+                      <span id="you-ego-val" class="slider-readout">1,320</span>
+                    </div>
+                    <input type="range" id="you-ego-slider" min="800" max="2200" step="10" value="1320" aria-valuetext="1320 EGO" />
+                  </div>
+
+                  <div>
+                    <div class="slider-label-row">
+                      <label for="opp-ego-slider">TRAINING PARTNER EGO</label>
+                      <span id="opp-ego-val" class="slider-readout">1,450</span>
+                    </div>
+                    <input type="range" id="opp-ego-slider" min="800" max="2200" step="10" value="1450" aria-valuetext="1450 EGO" />
+                  </div>
+
+                  <div class="preset-row" aria-label="Match outcome">
+                    <button type="button" class="btn btn-primary btn-sm elo-outcome-btn" data-score="1">Win Match</button>
+                    <button type="button" class="btn btn-secondary btn-sm elo-outcome-btn" data-score="0.5">60s Draw</button>
+                    <button type="button" class="btn btn-secondary btn-sm elo-outcome-btn" data-score="0">Loss</button>
+                    <button type="button" id="btn-provisional" class="chip-btn" aria-pressed="false">Standard (K=24)</button>
+                  </div>
+                </div>
+
+                <div class="elo-result-box">
+                  <div class="slider-label-row" style="justify-content: center; margin-bottom: 2px;">PROJECTED EGO SHIFT</div>
+                  <div id="elo-delta-display" class="elo-delta">+16 EGO</div>
+                  <div id="elo-new-rating" class="elo-new">New Standing: 1,336</div>
+                  <span id="elo-tier-badge" class="status-pill pass">VANGUARD</span>
+
+                  <div class="tier-ladder" id="tier-ladder" aria-label="Rank tiers">
+                    <span class="tier-item" data-tier="IRON">IRON</span>
+                    <span class="tier-item" data-tier="SPARTAN">SPARTAN 1000+</span>
+                    <span class="tier-item active" data-tier="VANGUARD">VANGUARD 1300+</span>
+                    <span class="tier-item" data-tier="TITAN">TITAN 1600+</span>
+                    <span class="tier-item" data-tier="GOD OF WAR">GOD OF WAR 1900+</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="bottom-cta">
-      <div>
-        <div class="kicker" style="margin-bottom: 6px;">READY TO PROVE IT?</div>
-        <h2 style="font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 26px;">No fake reps. No gallery uploads. Pure effort.</h2>
-      </div>
-      <div class="cta-row" style="margin-bottom: 0;">
-        <a href="app/index.html" class="btn-volt">PLAY IN BROWSER NOW</a>
-        <a id="apk-download-link-2" href="../../releases/latest" class="btn-slate">GET ANDROID APK</a>
+    <!-- Privacy & Fair Play -->
+    <section id="integrity" class="section reveal">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">Privacy &amp; Fair Play</div>
+          <h2 class="section-title">Respect your effort and your privacy.</h2>
+        </div>
+
+        <div class="trust-grid">
+          <div class="trust-item">
+            <h3 class="trust-title">Live Camera Only</h3>
+            <p class="trust-copy">No gallery imports and no pre-recorded video clips. Every match happens live when the clock starts.</p>
+          </div>
+          <div class="trust-item">
+            <h3 class="trust-title">Video Never Leaves Your Phone</h3>
+            <p class="trust-copy">Pose detection runs locally on your device. Only lightweight joint angles and timestamps are sent for verification.</p>
+          </div>
+          <div class="trust-item">
+            <h3 class="trust-title">Server-Verified Reps</h3>
+            <p class="trust-copy">The server recomputes every rep from raw kinematic data so nobody can spoof counts or inflate their standing.</p>
+          </div>
+        </div>
       </div>
     </section>
-  </div>
+
+    <!-- Closing Editorial CTA -->
+    <section class="section reveal" style="padding-top: 12px;">
+      <div class="container">
+        <div class="closing-cta">
+          <div>
+            <div class="eyebrow" style="margin-bottom: 10px;">Ready for your next session?</div>
+            <h2 class="closing-title">Bring PushGard to your next workout.</h2>
+            <p class="closing-sub">
+              Install the latest Android release (v1.0.5) or open the browser preview to see the standard firsthand.
+            </p>
+          </div>
+          <div class="cta-group" style="margin-bottom: 0;">
+            <a id="apk-download-link-2" href="../../releases/latest" class="btn btn-primary">Download Android APK</a>
+            <a href="app/index.html" class="btn btn-secondary">Open Web App</a>
+          </div>
+        </div>
+
+        <footer class="site-footer">
+          <span>PushGard · Built for honest form and real physical rivalry.</span>
+          <span>Upgrading from an older beta? Uninstall the previous build before installing v1.0.5.</span>
+        </footer>
+      </div>
+    </section>
+  </main>
 
   <script>
     // 1. Resolve GitHub Releases URL dynamically on *.github.io
@@ -867,233 +1393,334 @@
       var pathParts = window.location.pathname.split('/').filter(Boolean);
       if (host.endsWith('.github.io') && pathParts.length >= 1) {
         var url = 'https://github.com/' + host.replace('.github.io', '') + '/' + pathParts[0] + '/releases/latest';
-        var l1 = document.getElementById('apk-download-link');
-        var l2 = document.getElementById('apk-download-link-2');
-        if (l1) l1.href = url;
-        if (l2) l2.href = url;
+        ['apk-nav-link', 'apk-download-link', 'apk-download-link-2'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.href = url;
+        });
       }
     })();
 
-    // 2. Reload embedded app helper
-    document.getElementById('reload-app-btn').addEventListener('click', function () {
-      var frame = document.getElementById('app-iframe');
-      frame.src = frame.src;
-    });
+    // 2. Two-state Light/Dark comfort toggle (follows OS by default, syncs across tabs)
+    (function () {
+      var meta = document.querySelector('meta[name="color-scheme"]');
+      var toggleBtn = document.getElementById('theme-toggle-btn');
 
-    // 3. Accessible Tabs with hidden="until-found" & beforematch support
-    var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
-    var panels = {
-      'tab-tug': document.getElementById('panel-tug'),
-      'tab-form': document.getElementById('panel-form'),
-      'tab-elo': document.getElementById('panel-elo')
-    };
+      function systemScheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
 
-    function activateTab(selectedTab) {
-      tabs.forEach(function (tab) {
-        var isTarget = tab === selectedTab;
-        tab.setAttribute('aria-selected', isTarget ? 'true' : 'false');
-        var panel = panels[tab.id];
-        if (!panel) return;
-        if (isTarget) {
-          panel.removeAttribute('hidden');
-          panel.setAttribute('tabindex', '0');
+      function applyScheme(value) {
+        meta.content = (value === 'light' || value === 'dark') ? value : 'light dark';
+      }
+
+      toggleBtn.addEventListener('click', function () {
+        var stored = null;
+        try { stored = localStorage.getItem('color-scheme'); } catch (_) {}
+        var currentRendered = (stored === 'light' || stored === 'dark') ? stored : systemScheme();
+        var target = currentRendered === 'dark' ? 'light' : 'dark';
+
+        if (target === systemScheme()) {
+          try { localStorage.removeItem('color-scheme'); } catch (_) {}
+          applyScheme(null);
         } else {
-          panel.setAttribute('hidden', 'until-found');
-          panel.removeAttribute('tabindex');
+          try { localStorage.setItem('color-scheme', target); } catch (_) {}
+          applyScheme(target);
         }
       });
-    }
 
-    tabs.forEach(function (tab, idx) {
-      tab.addEventListener('click', function () {
-        activateTab(tab);
-      });
-      tab.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-          var nextIdx = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
-          tabs[nextIdx].focus();
-          activateTab(tabs[nextIdx]);
+      window.addEventListener('storage', function (e) {
+        if (e.key === 'color-scheme') {
+          applyScheme(e.newValue);
         }
       });
-    });
+    })();
 
-    Object.keys(panels).forEach(function (tabId) {
-      panels[tabId].addEventListener('beforematch', function () {
-        activateTab(document.getElementById(tabId));
+    // 3. Lazy-loaded Phone Preview (keeps initial page load fast and cool)
+    (function () {
+      var frame = document.getElementById('phone-frame');
+      var cover = document.getElementById('phone-cover');
+      var launchBtn = document.getElementById('launch-preview-btn');
+      var reloadBtn = document.getElementById('reload-app-btn');
+      var iframe = null;
+
+      launchBtn.addEventListener('click', function () {
+        if (iframe) return;
+        iframe = document.createElement('iframe');
+        iframe.src = 'app/index.html';
+        iframe.title = 'PushGard Official Live Web App';
+        iframe.allow = 'camera';
+        cover.remove();
+        frame.appendChild(iframe);
+        reloadBtn.hidden = false;
       });
-    });
 
-    // 4. Tug-of-War KO Simulator (+15 lead = Instant KO)
-    var youReps = 0;
-    var rivalReps = 0;
-    var simYouEl = document.getElementById('sim-you-reps');
-    var simRivalEl = document.getElementById('sim-rival-reps');
-    var simLeadEl = document.getElementById('sim-lead-badge');
-    var simFillEl = document.getElementById('sim-tug-fill');
-    var simMsgEl = document.getElementById('sim-tug-msg');
-    var simPctEl = document.getElementById('sim-tug-pct');
+      reloadBtn.addEventListener('click', function () {
+        if (iframe) iframe.src = iframe.src;
+      });
+    })();
 
-    function renderTug() {
-      var diff = youReps - rivalReps;
-      var ratio = Math.max(0, Math.min(1, 0.5 + diff / 30));
-      var pct = (ratio * 100).toFixed(1);
-      simYouEl.textContent = youReps;
-      simRivalEl.textContent = rivalReps;
-      simFillEl.style.width = pct + '%';
-      simPctEl.textContent = pct + '% CONTROL';
+    // 4. Accessible Tabs (selection follows focus, hidden="until-found", beforematch)
+    (function () {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+      var panels = {
+        'tab-form': document.getElementById('panel-form'),
+        'tab-pacing': document.getElementById('panel-pacing'),
+        'tab-ego': document.getElementById('panel-ego')
+      };
 
-      if (diff >= 15) {
-        simLeadEl.textContent = '+' + diff + ' LEAD · KO VICTORY!';
-        simLeadEl.style.background = '#D4FF2A';
-        simLeadEl.style.color = '#0B0B0F';
-        simMsgEl.textContent = 'INSTANT KNOCKOUT! You hit a +15 rep lead and took the match!';
-      } else if (diff <= -15) {
-        simLeadEl.textContent = diff + ' DEFICIT · KO LOSS';
-        simLeadEl.style.background = '#FF8A7A';
-        simLeadEl.style.color = '#0B0B0F';
-        simMsgEl.textContent = 'CYBER_KONG reached a +15 lead. Hit RESET MATCH to run it back!';
-      } else {
-        var prefix = diff > 0 ? '+' : '';
-        var toKo = 15 - diff;
-        simLeadEl.textContent = prefix + diff + ' LEAD · ' + toKo + ' TO KO';
-        simLeadEl.style.background = '#1B1A26';
-        simLeadEl.style.color = diff >= 0 ? '#D4FF2A' : '#FF8A7A';
-        simMsgEl.textContent = diff > 0
-          ? 'You hold the lead! ' + toKo + ' more net reps for an instant KO.'
-          : 'Push back! Every clean rep moves the bar +3.33% toward KO.';
-      }
-    }
-
-    document.getElementById('btn-you-rep').addEventListener('click', function () {
-      if (Math.abs(youReps - rivalReps) >= 15) return;
-      youReps++;
-      renderTug();
-    });
-    document.getElementById('btn-rival-rep').addEventListener('click', function () {
-      if (Math.abs(youReps - rivalReps) >= 15) return;
-      rivalReps++;
-      renderTug();
-    });
-    document.getElementById('btn-reset-tug').addEventListener('click', function () {
-      youReps = 0;
-      rivalReps = 0;
-      renderTug();
-    });
-
-    // 5. Form & Angle Checker Simulator
-    var elbowSlider = document.getElementById('elbow-slider');
-    var elbowReadout = document.getElementById('elbow-readout');
-    var formPill = document.getElementById('form-angle-pill');
-    var formCoach = document.getElementById('form-coaching-text');
-    var hipSagBtn = document.getElementById('btn-hip-sag');
-    var hasHipFault = false;
-
-    function updateFormView() {
-      var angle = Number(elbowSlider.value);
-      elbowReadout.textContent = angle + '°';
-      elbowSlider.setAttribute('aria-valuetext', angle + ' degrees');
-
-      // Map 180 -> 65 degrees into realistic push-up body drop
-      var depthFactor = (180 - angle) / 115; // 0.0 (top) -> 1.0 (bottom)
-      var shoulderY = 42 + depthFactor * 58;
-      var shoulderX = 180 + depthFactor * 6;
-      var elbowX = 172 - depthFactor * 26;
-      var elbowY = 92 + depthFactor * 14;
-      var hipY = 86 + depthFactor * 28 + (hasHipFault ? 22 : 0);
-
-      document.getElementById('svg-forearm').setAttribute('x2', elbowX);
-      document.getElementById('svg-forearm').setAttribute('y2', elbowY);
-      document.getElementById('svg-elbow').setAttribute('cx', elbowX);
-      document.getElementById('svg-elbow').setAttribute('cy', elbowY);
-      document.getElementById('svg-upperarm').setAttribute('x1', elbowX);
-      document.getElementById('svg-upperarm').setAttribute('y1', elbowY);
-      document.getElementById('svg-upperarm').setAttribute('x2', shoulderX);
-      document.getElementById('svg-upperarm').setAttribute('y2', shoulderY);
-      document.getElementById('svg-shoulder').setAttribute('cx', shoulderX);
-      document.getElementById('svg-shoulder').setAttribute('cy', shoulderY);
-      document.getElementById('svg-torso').setAttribute('x1', shoulderX);
-      document.getElementById('svg-torso').setAttribute('y1', shoulderY);
-      document.getElementById('svg-hip').setAttribute('cy', hipY);
-
-      if (hasHipFault) {
-        formPill.className = 'form-pill warn';
-        formPill.textContent = 'REJECTED · BODY_LINE (> 15° SAG)';
-        formCoach.textContent = 'Hips dropped outside the 15° plank tolerance — rep is rejected until body line is straight.';
-      } else if (angle <= 90) {
-        formPill.className = 'form-pill pass';
-        formPill.textContent = 'DEPTH VERIFIED · ' + angle + '° (<= 90°)';
-        formCoach.textContent = 'Bottom depth reached! Push back past 160° lockout to complete and count the rep.';
-      } else if (angle >= 160) {
-        formPill.className = 'form-pill pass';
-        formPill.textContent = 'LOCKOUT READY · ' + angle + '° (>= 160°)';
-        formCoach.textContent = 'Full arm lockout verified. Drop below 90° to register the next clean rep.';
-      } else {
-        formPill.className = 'form-pill warn';
-        formPill.textContent = 'TOO SHALLOW · ' + angle + '° (NEED <= 90°)';
-        formCoach.textContent = 'Stopping above 90° triggers SHALLOW rejection — keep lowering your chest.';
-      }
-    }
-
-    elbowSlider.addEventListener('input', updateFormView);
-    hipSagBtn.addEventListener('click', function () {
-      hasHipFault = !hasHipFault;
-      hipSagBtn.setAttribute('aria-pressed', hasHipFault ? 'true' : 'false');
-      hipSagBtn.textContent = hasHipFault
-        ? 'HIP ALIGNMENT: SAGGING (> 15° FAULT)'
-        : 'HIP ALIGNMENT: STRAIGHT (<= 15°)';
-      updateFormView();
-    });
-    updateFormView();
-
-    // 6. Win/Loss Elo Calculator
-    var youEgoSlider = document.getElementById('you-ego-slider');
-    var oppEgoSlider = document.getElementById('opp-ego-slider');
-    var youEgoVal = document.getElementById('you-ego-val');
-    var oppEgoVal = document.getElementById('opp-ego-val');
-    var eloDeltaDisplay = document.getElementById('elo-delta-display');
-    var eloNewRating = document.getElementById('elo-new-rating');
-    var eloTierBadge = document.getElementById('elo-tier-badge');
-    var selectedScore = 1;
-
-    function getTierName(ego) {
-      if (ego >= 1900) return 'GOD OF WAR';
-      if (ego >= 1600) return 'TITAN II';
-      if (ego >= 1300) return 'VANGUARD';
-      if (ego >= 1000) return 'SPARTAN';
-      return 'IRON';
-    }
-
-    function updateEloCalc() {
-      var you = Number(youEgoSlider.value);
-      var opp = Number(oppEgoSlider.value);
-      youEgoVal.textContent = you.toLocaleString();
-      oppEgoVal.textContent = opp.toLocaleString();
-      youEgoSlider.setAttribute('aria-valuetext', you + ' EGO');
-      oppEgoSlider.setAttribute('aria-valuetext', opp + ' EGO');
-
-      var expected = 1 / (1 + Math.pow(10, (opp - you) / 400));
-      var delta = Math.round(24 * (selectedScore - expected));
-      var nextEgo = Math.max(100, you + delta);
-      var sign = delta >= 0 ? '+' : '';
-
-      eloDeltaDisplay.textContent = sign + delta + ' EGO';
-      eloDeltaDisplay.style.color = delta >= 0 ? '#D4FF2A' : '#FF8A7A';
-      eloNewRating.textContent = 'New EGO: ' + nextEgo.toLocaleString();
-      eloTierBadge.textContent = getTierName(nextEgo);
-    }
-
-    youEgoSlider.addEventListener('input', updateEloCalc);
-    oppEgoSlider.addEventListener('input', updateEloCalc);
-    document.querySelectorAll('.elo-outcome-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        selectedScore = Number(btn.getAttribute('data-score'));
-        document.querySelectorAll('.elo-outcome-btn').forEach(function (b) {
-          b.className = b === btn ? 'btn-volt elo-outcome-btn' : 'btn-slate elo-outcome-btn';
+      function activateTab(selectedTab) {
+        tabs.forEach(function (tab) {
+          var isTarget = tab === selectedTab;
+          tab.setAttribute('aria-selected', isTarget ? 'true' : 'false');
+          tab.setAttribute('tabindex', isTarget ? '0' : '-1');
+          var panel = panels[tab.id];
+          if (!panel) return;
+          if (isTarget) {
+            panel.removeAttribute('hidden');
+            panel.setAttribute('tabindex', '0');
+          } else {
+            panel.setAttribute('hidden', 'until-found');
+            panel.removeAttribute('tabindex');
+          }
         });
-        updateEloCalc();
+        selectedTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
+
+      tabs.forEach(function (tab, idx) {
+        tab.setAttribute('tabindex', tab.getAttribute('aria-selected') === 'true' ? '0' : '-1');
+        tab.addEventListener('click', function () { activateTab(tab); });
+        tab.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            var nextIdx = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+            tabs[nextIdx].focus();
+            activateTab(tabs[nextIdx]);
+          }
+        });
       });
-    });
-    updateEloCalc();
+
+      Object.keys(panels).forEach(function (tabId) {
+        panels[tabId].addEventListener('beforematch', function () {
+          activateTab(document.getElementById(tabId));
+        });
+      });
+    })();
+
+    // 5. Interactive Form & Depth Standard
+    (function () {
+      var slider = document.getElementById('elbow-slider');
+      var readout = document.getElementById('elbow-readout');
+      var pill = document.getElementById('form-angle-pill');
+      var coaching = document.getElementById('form-coaching-text');
+      var hipBtn = document.getElementById('btn-hip-sag');
+
+      var svgForearm = document.getElementById('svg-forearm');
+      var svgElbow = document.getElementById('svg-elbow');
+      var svgUpperarm = document.getElementById('svg-upperarm');
+      var svgTorso = document.getElementById('svg-torso');
+      var svgShoulder = document.getElementById('svg-shoulder');
+      var svgHip = document.getElementById('svg-hip');
+
+      var hipSag = false;
+
+      function renderForm() {
+        var angle = parseInt(slider.value, 10);
+        readout.textContent = angle + '\u00B0';
+        slider.setAttribute('aria-valuetext', angle + ' degrees');
+
+        var t = (angle - 65) / (180 - 65);
+        var shoulderY = Math.round(112 - t * 66);
+        var shoulderX = Math.round(174 + t * 8);
+        var elbowX = Math.round(148 + t * 24);
+        var elbowY = Math.round(114 - t * 22);
+        var hipY = Math.round(((shoulderY + 132) / 2) + (hipSag ? 24 : 0));
+
+        svgForearm.setAttribute('x2', elbowX);
+        svgForearm.setAttribute('y2', elbowY);
+        svgElbow.setAttribute('cx', elbowX);
+        svgElbow.setAttribute('cy', elbowY);
+        svgUpperarm.setAttribute('x1', elbowX);
+        svgUpperarm.setAttribute('y1', elbowY);
+        svgUpperarm.setAttribute('x2', shoulderX);
+        svgUpperarm.setAttribute('y2', shoulderY);
+        svgShoulder.setAttribute('cx', shoulderX);
+        svgShoulder.setAttribute('cy', shoulderY);
+        svgTorso.setAttribute('x1', shoulderX);
+        svgTorso.setAttribute('y1', shoulderY);
+        svgHip.setAttribute('cy', hipY);
+
+        var accent = hipSag || (angle > 90 && angle < 160) ? 'var(--coral-text)' : 'var(--accent-text)';
+        svgForearm.setAttribute('stroke', accent);
+        svgUpperarm.setAttribute('stroke', accent);
+        svgShoulder.setAttribute('fill', accent);
+        svgHip.setAttribute('fill', hipSag ? 'var(--coral-text)' : accent);
+
+        if (hipSag) {
+          pill.className = 'status-pill warn';
+          pill.textContent = 'REJECTED · HIP SAG (> 15\u00B0)';
+          coaching.innerHTML = 'Core broke plank alignment beyond <strong>15&deg;</strong>. Brace your glutes and abs so shoulders, hips, and ankles form one clean line.';
+        } else if (angle <= 90) {
+          pill.className = 'status-pill pass';
+          pill.textContent = 'CLEAN DEPTH VERIFIED · ' + angle + '\u00B0';
+          coaching.innerHTML = '<strong>Depth cleared (&le; 90&deg;).</strong> Press back up past <strong>160&deg;</strong> to lock out and record a verified rep.';
+        } else if (angle >= 160) {
+          pill.className = 'status-pill pass';
+          pill.textContent = 'FULL LOCKOUT · ' + angle + '\u00B0';
+          coaching.innerHTML = '<strong>Full extension (&ge; 160&deg;).</strong> Ready for the next rep — lower with control to 90&deg; or deeper.';
+        } else {
+          pill.className = 'status-pill warn';
+          pill.textContent = 'TOO SHALLOW · ' + angle + '\u00B0';
+          coaching.innerHTML = 'Not deep enough to count. Lower your chest until elbow angle hits <strong>&le; 90&deg;</strong>.';
+        }
+      }
+
+      slider.addEventListener('input', renderForm);
+      hipBtn.addEventListener('click', function () {
+        hipSag = !hipSag;
+        hipBtn.setAttribute('aria-pressed', hipSag ? 'true' : 'false');
+        hipBtn.textContent = hipSag ? 'Hip Alignment: Sagging (> 15\u00B0)' : 'Hip Alignment: Straight (\u2264 15\u00B0)';
+        renderForm();
+      });
+
+      document.querySelectorAll('.form-preset').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          slider.value = btn.getAttribute('data-angle');
+          renderForm();
+        });
+      });
+
+      renderForm();
+    })();
+
+    // 6. 60s Head-to-Head Pacing Simulator
+    (function () {
+      var youReps = 0;
+      var rivalReps = 0;
+      var youEl = document.getElementById('sim-you-reps');
+      var rivalEl = document.getElementById('sim-rival-reps');
+      var leadEl = document.getElementById('sim-lead-badge');
+      var fillEl = document.getElementById('sim-tug-fill');
+      var msgEl = document.getElementById('sim-tug-msg');
+      var pctEl = document.getElementById('sim-tug-pct');
+
+      function renderPacing() {
+        var diff = youReps - rivalReps;
+        var ratio = Math.max(0, Math.min(1, 0.5 + diff / 30));
+        var pct = (ratio * 100).toFixed(1);
+        youEl.textContent = youReps;
+        rivalEl.textContent = rivalReps;
+        fillEl.style.width = pct + '%';
+        pctEl.textContent = pct + '% CONTROL';
+
+        if (diff >= 15) {
+          leadEl.className = 'status-pill pass';
+          leadEl.textContent = '+' + diff + ' LEAD · EARLY FINISH WIN';
+          msgEl.textContent = 'Match closed early — you built a +15 verified rep lead.';
+        } else if (diff <= -15) {
+          leadEl.className = 'status-pill warn';
+          leadEl.textContent = diff + ' BEHIND · EARLY FINISH LOSS';
+          msgEl.textContent = 'Your training partner built a 15-rep lead and closed the match.';
+        } else if (diff > 0) {
+          leadEl.className = 'status-pill pass';
+          leadEl.textContent = '+' + diff + ' LEAD · ' + (15 - diff) + ' TO CLOSE';
+          msgEl.textContent = 'You hold the pace. Stay ahead until 0:00 or add ' + (15 - diff) + ' more net reps to finish early.';
+        } else if (diff < 0) {
+          leadEl.className = 'status-pill warn';
+          leadEl.textContent = diff + ' BEHIND · ANSWER BACK';
+          msgEl.textContent = 'You trail by ' + Math.abs(diff) + ' reps. Keep form clean to pull back past 50%.';
+        } else {
+          leadEl.className = 'status-pill pass';
+          leadEl.textContent = 'EVEN · +15 LEAD FINISHES EARLY';
+          msgEl.textContent = 'Every clean rep shifts the dominance bar by 3.33%. Hold the lead at 0:00 or hit +15 to finish early.';
+        }
+      }
+
+      document.getElementById('btn-you-rep').addEventListener('click', function () {
+        if (Math.abs(youReps - rivalReps) < 15) { youReps += 1; renderPacing(); }
+      });
+      document.getElementById('btn-you-surge').addEventListener('click', function () {
+        if (Math.abs(youReps - rivalReps) < 15) { youReps += Math.min(5, 15 - (youReps - rivalReps)); renderPacing(); }
+      });
+      document.getElementById('btn-rival-rep').addEventListener('click', function () {
+        if (Math.abs(youReps - rivalReps) < 15) { rivalReps += 1; renderPacing(); }
+      });
+      document.getElementById('btn-reset-tug').addEventListener('click', function () {
+        youReps = 0; rivalReps = 0; renderPacing();
+      });
+
+      renderPacing();
+    })();
+
+    // 7. Win/Loss EGO Standing Calculator
+    (function () {
+      var youSlider = document.getElementById('you-ego-slider');
+      var oppSlider = document.getElementById('opp-ego-slider');
+      var youVal = document.getElementById('you-ego-val');
+      var oppVal = document.getElementById('opp-ego-val');
+      var deltaEl = document.getElementById('elo-delta-display');
+      var newEl = document.getElementById('elo-new-rating');
+      var tierEl = document.getElementById('elo-tier-badge');
+      var provBtn = document.getElementById('btn-provisional');
+      var outcomeBtns = Array.prototype.slice.call(document.querySelectorAll('.elo-outcome-btn'));
+      var tierItems = Array.prototype.slice.call(document.querySelectorAll('.tier-item'));
+
+      var actualScore = 1.0;
+      var isProvisional = false;
+
+      function tierFor(ego) {
+        if (ego >= 1900) return 'GOD OF WAR';
+        if (ego >= 1600) return 'TITAN';
+        if (ego >= 1300) return 'VANGUARD';
+        if (ego >= 1000) return 'SPARTAN';
+        return 'IRON';
+      }
+
+      function renderEgo() {
+        var playerEgo = parseInt(youSlider.value, 10);
+        var oppEgo = parseInt(oppSlider.value, 10);
+        var k = isProvisional ? 40 : 24;
+        youVal.textContent = playerEgo.toLocaleString();
+        oppVal.textContent = oppEgo.toLocaleString();
+
+        var expected = 1 / (1 + Math.pow(10, (oppEgo - playerEgo) / 400));
+        var delta = Math.round(k * (actualScore - expected));
+        var updated = Math.max(100, playerEgo + delta);
+        var applied = updated - playerEgo;
+        var tier = tierFor(updated);
+
+        deltaEl.textContent = (applied >= 0 ? '+' : '') + applied + ' EGO';
+        deltaEl.style.color = applied >= 0 ? 'var(--accent-text)' : 'var(--coral-text)';
+        newEl.textContent = 'New Standing: ' + updated.toLocaleString();
+        tierEl.textContent = tier;
+        tierEl.className = applied >= 0 ? 'status-pill pass' : 'status-pill warn';
+
+        tierItems.forEach(function (item) {
+          item.classList.toggle('active', item.getAttribute('data-tier') === tier);
+        });
+      }
+
+      youSlider.addEventListener('input', renderEgo);
+      oppSlider.addEventListener('input', renderEgo);
+
+      provBtn.addEventListener('click', function () {
+        isProvisional = !isProvisional;
+        provBtn.setAttribute('aria-pressed', isProvisional ? 'true' : 'false');
+        provBtn.textContent = isProvisional ? 'Provisional (K=40)' : 'Standard (K=24)';
+        renderEgo();
+      });
+
+      outcomeBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          actualScore = parseFloat(btn.getAttribute('data-score'));
+          outcomeBtns.forEach(function (b) {
+            b.className = b === btn ? 'btn btn-primary btn-sm elo-outcome-btn' : 'btn btn-secondary btn-sm elo-outcome-btn';
+          });
+          renderEgo();
+        });
+      });
+
+      renderEgo();
+    })();
   </script>
 </body>
 </html>
