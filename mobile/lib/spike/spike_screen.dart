@@ -81,13 +81,23 @@ class _SpikeScreenState extends State<SpikeScreen> {
         });
       } else {
         setState(() {
-          _statusText = 'Standby · Live Camera Sensor Ready';
+          _isCameraReady = false;
+          _statusText = 'Live camera tracking requires the Android APK.';
         });
       }
     } catch (e) {
       if (!mounted) return;
+      final String message;
+      if (e is MissingPluginException) {
+        message = 'Live camera tracking requires the Android APK.';
+      } else if (e is PlatformException) {
+        message = 'Camera error: ${e.message ?? e.code}';
+      } else {
+        message = 'Camera error: $e';
+      }
       setState(() {
-        _statusText = 'Standby · Live Camera Sensor Ready';
+        _isCameraReady = false;
+        _statusText = message;
       });
     }
   }
@@ -260,7 +270,7 @@ class _SpikeScreenState extends State<SpikeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'VANGUARD_01',
+                          store.handle,
                           style: AppTypography.sectionTitle(color: Colors.white)
                               .copyWith(fontSize: 22),
                         ),

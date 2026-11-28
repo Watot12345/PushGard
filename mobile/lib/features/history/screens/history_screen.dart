@@ -228,26 +228,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (context, _) {
         final losses = (store.totalBattles - store.battlesWon).clamp(0, 99999);
         final standings = <Map<String, dynamic>>[
-          {'name': 'APEX_REAPER', 'record': '56W - 4L', 'kos': 29, 'ego': 1945, 'reps': 16200, 'isMe': false},
-          {'name': 'IRON_VALKYRIE', 'record': '51W - 7L', 'kos': 24, 'ego': 1860, 'reps': 14800, 'isMe': false},
-          {'name': 'SPARTAN_99', 'record': '49W - 8L', 'kos': 21, 'ego': 1815, 'reps': 13900, 'isMe': false},
           {
-            'name': 'YOU (VANGUARD_01)',
+            'name': 'YOU (${store.handle})',
             'record': '${store.battlesWon}W - ${losses}L',
             'kos': store.koWins,
             'ego': store.egoRating,
             'reps': store.lifetimeValidReps,
             'isMe': true,
           },
-          {'name': 'CYBER_KONG', 'record': '44W - 11L', 'kos': 16, 'ego': 1755, 'reps': 11400, 'isMe': false},
-          {'name': 'MARCUS_FIT', 'record': '39W - 14L', 'kos': 12, 'ego': 1690, 'reps': 9850, 'isMe': false},
-          {'name': 'NIGHT_HAWK', 'record': '35W - 18L', 'kos': 9, 'ego': 1640, 'reps': 8400, 'isMe': false},
-        ]..sort((a, b) {
-            final key = _leaderboardType == 'ko'
-                ? 'kos'
-                : (_leaderboardType == 'reps' ? 'reps' : 'ego');
-            return (b[key] as int).compareTo(a[key] as int);
-          });
+        ];
 
         return Scaffold(
           backgroundColor: AppColors.background,

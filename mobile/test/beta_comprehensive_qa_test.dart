@@ -256,8 +256,8 @@ void main() {
 
       expect(find.text('BATTLE RESULT'), findsOneWidget);
       expect(find.text('YOU WIN'), findsOneWidget);
-      expect(PlayerSessionStore.instance.battlesWon, 49);
-      expect(PlayerSessionStore.instance.koWins, 19); // Unchanged (not a KO)
+      expect(PlayerSessionStore.instance.battlesWon, 1);
+      expect(PlayerSessionStore.instance.koWins, 0); // Unchanged (not a KO)
       expect(
         PlayerSessionStore.instance.battleHistory.first.method,
         '60s verified count',
@@ -282,8 +282,8 @@ void main() {
 
       expect(find.text('BATTLE RESULT'), findsOneWidget);
       expect(find.text('DRAW'), findsOneWidget);
-      expect(PlayerSessionStore.instance.battlesWon, 48); // Unchanged on draw
-      expect(PlayerSessionStore.instance.totalBattles, 55);
+      expect(PlayerSessionStore.instance.battlesWon, 0); // Unchanged on draw
+      expect(PlayerSessionStore.instance.totalBattles, 1);
       expect(
         PlayerSessionStore.instance.battleHistory.first.outcome,
         'DRAW',
@@ -312,7 +312,7 @@ void main() {
 
       expect(find.text('BATTLE RESULT'), findsOneWidget);
       expect(find.text('YOU LOSE'), findsOneWidget);
-      expect(PlayerSessionStore.instance.egoRating, 1769); // 1780 - 11
+      expect(PlayerSessionStore.instance.egoRating, 980); // 1000 - 20 (K=40)
       expect(
         PlayerSessionStore.instance.battleHistory.first.outcome,
         'KO LOSS',
@@ -462,23 +462,16 @@ void main() {
         Navigator.of(tester.element(find.text('EGO RANK TIERS'))).pop();
         await tester.pumpAndSettle();
 
-        // 3. Tap waiting challenge card -> NUDGE RIVAL -> updates card state
-        await tester.ensureVisible(find.text('vs. [MARCUS_FIT]'));
+        // 3. Verify clean fresh-user challenge card (no fake static rivals)
+        await tester.ensureVisible(find.text('No active challenges yet'));
         await tester.pump();
-        await tester.tap(find.text('vs. [MARCUS_FIT]'));
-        await tester.pumpAndSettle();
-        expect(find.text('NUDGE RIVAL'), findsOneWidget);
-        await tester.tap(find.text('NUDGE RIVAL'));
-        await tester.pumpAndSettle();
-        expect(find.text('Rival nudged · You lead 38 reps'), findsOneWidget);
+        expect(find.text('No active challenges yet'), findsOneWidget);
 
-        // 4. Switch to RANKS tab and tap a rival -> opens RIVAL PROFILE sheet
+        // 4. Switch to RANKS tab and verify only the active athlete is shown (no fake bots)
         await tester.tap(find.byTooltip('RANKS'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('APEX_REAPER'));
-        await tester.pumpAndSettle();
-        expect(find.text('RIVAL PROFILE'), findsOneWidget);
-        expect(find.text('CHALLENGE RIVAL'), findsOneWidget);
+        expect(find.text('YOU (ATHLETE)'), findsOneWidget);
+        expect(find.text('APEX_REAPER'), findsNothing);
       },
     );
 

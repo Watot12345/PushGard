@@ -20,8 +20,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _marcusNudged = false;
-
   void _showRankLadderSheet(BuildContext context, int egoRating) {
     final tiers = [
       (name: 'GOD OF WAR', range: '1,900+ EGO', min: 1900, max: 99999),
@@ -178,64 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showWaitingChallengeSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'CHALLENGE STATUS',
-                style: AppTypography.trackedLabel(
-                  color: AppColors.volt,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'vs. [MARCUS_FIT]',
-                style: AppTypography.sectionTitle(color: Colors.white),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'You posted 38 verified reps. Waiting for opponent attempt before timer expiry.',
-                style: AppTypography.body(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 18),
-              PushGardButton(
-                text: _marcusNudged ? 'RIVAL NUDGED' : 'NUDGE RIVAL',
-                icon: _marcusNudged
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.notifications_active_outlined,
-                variant: _marcusNudged
-                    ? ButtonVariant.secondary
-                    : ButtonVariant.primary,
-                height: 52,
-                onPressed: _marcusNudged
-                    ? null
-                    : () {
-                        setState(() => _marcusNudged = true);
-                        Navigator.of(ctx).pop();
-                      },
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -417,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 28),
 
-                  // 4. CHALLENGES Section (Page 3 of PDF)
+                  // 4. CHALLENGES Section (live challenges or clean empty state)
                   Text(
                     'CHALLENGES',
                     style: AppTypography.trackedLabel(
@@ -427,28 +367,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Challenge 1: Your turn with Volt "GO" button
                   _buildChallengeCard(
                     context: context,
-                    opponent: 'vs. [CYBER_KONG]',
+                    opponent: 'No active challenges yet',
                     subtitle:
-                        'Your turn · Tug-of-War (+13 EGO) · expires in 18h',
+                        'Start a 60s battle to post your first verified set and earn EGO.',
                     isActionable: true,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Challenge 2: Waiting for opponent (tappable to nudge)
-                  _buildChallengeCard(
-                    context: context,
-                    opponent: 'vs. [MARCUS_FIT]',
-                    subtitle: _marcusNudged
-                        ? 'Rival nudged · You lead 38 reps'
-                        : 'Waiting for their attempt · You lead 38 reps',
-                    isActionable: false,
-                    onCardTap: () {
-                      HapticFeedback.selectionClick();
-                      _showWaitingChallengeSheet(context);
-                    },
                   ),
 
                   const SizedBox(height: 22),

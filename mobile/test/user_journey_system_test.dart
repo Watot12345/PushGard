@@ -27,11 +27,11 @@ void main() {
       await tester.pumpWidget(const PushGardApp());
       await tester.pump();
 
-      // 1. Verify initial Home Screen state (Page 3 of PDF)
+      // 1. Verify clean fresh-user Home Screen state (no static demo data)
       expect(find.text('PUSHGARD'), findsOneWidget);
-      expect(find.text('1,780'), findsOneWidget);
+      expect(find.text('1,000'), findsOneWidget);
       expect(
-        find.text('Win/Loss Elo rating · 48W – 6L (19 Tug-of-War KOs)'),
+        find.text('Win/Loss Elo rating · 0W – 0L (0 Tug-of-War KOs)'),
         findsOneWidget,
       );
 
@@ -106,7 +106,7 @@ void main() {
       // 8. Verify Battle Result Screen (Page 6 of PDF)
       expect(find.text('BATTLE RESULT'), findsOneWidget);
       expect(find.text('KO WIN'), findsOneWidget);
-      expect(find.text('1,793'), findsOneWidget); // 1780 + 13 EGO vs 1795 rival
+      expect(find.text('1,020'), findsOneWidget); // 1000 + 20 EGO (provisional K=40)
 
       // 9. Tap BACK HOME and verify reactive state persistence on Home Screen
       await tester.ensureVisible(find.text('BACK HOME'));
@@ -114,20 +114,20 @@ void main() {
       await tester.tap(find.text('BACK HOME'));
       await tester.pumpAndSettle();
 
-      expect(find.text('1,793'), findsOneWidget);
+      expect(find.text('1,020'), findsOneWidget);
       expect(
-        find.text('Win/Loss Elo rating · 49W – 6L (20 Tug-of-War KOs)'),
+        find.text('Win/Loss Elo rating · 1W – 0L (1 Tug-of-War KOs)'),
         findsOneWidget,
       );
 
       // 10. Switch to RANKS tab via icon tooltip and verify updated EGO in League & Battle Log
       await tester.tap(find.byTooltip('RANKS'));
       await tester.pumpAndSettle();
-      expect(find.text('49W - 6L · 20 KOs'), findsOneWidget);
+      expect(find.text('1W - 0L · 1 KOs'), findsOneWidget);
 
       await tester.tap(find.text('BATTLE LOG'));
       await tester.pumpAndSettle();
-      expect(find.text('+13 EGO'), findsOneWidget);
+      expect(find.text('+20 EGO'), findsOneWidget);
     },
   );
 
@@ -183,19 +183,19 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      // 5. Verify Solo Session Complete summary (SOLO RESULT / COMPLETE, 1,780 EGO unchanged)
+      // 5. Verify Solo Session Complete summary (SOLO RESULT / COMPLETE, 1,000 EGO unchanged)
       expect(find.text('SOLO RESULT'), findsOneWidget);
       expect(find.text('COMPLETE'), findsOneWidget);
-      expect(find.text('1,780'), findsOneWidget);
+      expect(find.text('1,000'), findsOneWidget);
 
-      // 6. Return Home and verify lifetime valid reps increased by +2 (12,480 -> 12,482)
+      // 6. Return Home and verify lifetime valid reps increased by +2 (0 -> 2)
       await tester.ensureVisible(find.text('BACK HOME'));
       await tester.pump();
       await tester.tap(find.text('BACK HOME'));
       await tester.pumpAndSettle();
 
-      expect(find.text('1,780'), findsOneWidget);
-      expect(find.text('12,482 valid reps'), findsOneWidget);
+      expect(find.text('1,000'), findsOneWidget);
+      expect(find.text('2 valid reps'), findsOneWidget);
     },
   );
 
@@ -211,7 +211,7 @@ void main() {
       await tester.pumpWidget(const PushGardApp());
       await tester.pump();
 
-      // 1. Tap "GO" on the vs. [CYBER_KONG] Challenge card
+      // 1. Tap "GO" on the Challenge card
       await tester.ensureVisible(find.text('GO'));
       await tester.pump();
       await tester.tap(find.text('GO'));
@@ -240,10 +240,10 @@ void main() {
       await tester.tap(find.text('FORFEIT'));
       await tester.pumpAndSettle();
 
-      // 4. Verify FORFEIT result screen (1780 - 11 = 1769 EGO)
+      // 4. Verify FORFEIT result screen (1000 - 20 = 980 EGO)
       expect(find.text('BATTLE RESULT'), findsOneWidget);
       expect(find.text('FORFEIT'), findsOneWidget);
-      expect(find.text('1,769'), findsOneWidget);
+      expect(find.text('980'), findsOneWidget);
 
       // 5. Tap "REMATCH" -> complete countdown -> trigger +15 KO win
       await tester.ensureVisible(find.text('REMATCH'));
@@ -265,9 +265,9 @@ void main() {
       rematchState.triggerKoForTesting();
       await tester.pumpAndSettle();
 
-      // 6. Verify Rematch KO Win recovers EGO (1769 + 13 = 1782 EGO)
+      // 6. Verify Rematch KO Win recovers EGO (980 + 21 = 1,001 EGO)
       expect(find.text('KO WIN'), findsOneWidget);
-      expect(find.text('1,782'), findsOneWidget);
+      expect(find.text('1,001'), findsOneWidget);
     },
   );
 }

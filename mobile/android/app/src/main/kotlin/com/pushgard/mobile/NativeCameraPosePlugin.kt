@@ -45,6 +45,7 @@ class NativeCameraPosePlugin :
     private var cameraProvider: ProcessCameraProvider? = null
     private var cameraExecutor: ExecutorService? = null
     private var poseDetector: PoseDetector? = null
+    private var cameraSessionId: Int = 0
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -98,7 +99,57 @@ class NativeCameraPosePlugin :
                 stopCamera()
                 result.success(null)
             }
+            "playTone" -> {
+                val cue = call.argument<String>("cue") ?: "rep"
+                playNativeTone(cue)
+                result.success(null)
+            }
+            "readSessionJson" -> {
+                try {
+                    val file = java.io.File(context.filesDir, "pushgard_session.json")
+                    result.success(if (file.exists()) file.readText() else null)
+                } catch (_: Throwable) {
+                    result.success(null)
+                }
+            }
+            "writeSessionJson" -> {
+                try {
+                    val payload = call.argument<String>("json") ?: ""
+                    val file = java.io.File(context.filesDir, "pushgard_session.json")
+                    file.writeText(payload)
+                    result.success(null)
+                } catch (_: Throwable) {
+                    result.success(null)
+                }
+            }
             else -> result.notImplemented()
+        }
+    }
+
+    private fun playNativeTone(cue: String) {
+        try {
+            val toneType = when (cue) {
+                "countdown" -> android.media.ToneGenerator.TONE_PROP_BEEP
+                "go" -> android.media.ToneGenerator.TONE_PROP_BEEP2
+                "rep" -> android.media.ToneGenerator.TONE_PROP_ACK
+                "fault" -> android.media.ToneGenerator.TONE_PROP_NACK
+                "finish" -> android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD
+                else -> android.media.ToneGenerator.TONE_PROP_BEEP
+            }
+            val durationMs = when (cue) {
+                "finish" -> 320
+                "go" -> 220
+                else -> 120
+            }
+            val tg = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 85)
+            tg.startTone(toneType, durationMs)
+            mainHandler.postDelayed({
+                try {
+                    tg.release()
+                } catch (_: Throwable) {}
+            }, (durationMs + 150).toLong())
+        } catch (_: Throwable) {
+            // Audio device unavailable; ignore safely
         }
     }
 
@@ -112,6 +163,7 @@ class NativeCameraPosePlugin :
 
     private fun startCamera(targetResolutionStr: String, lensFacingStr: String, result: MethodChannel.Result) {
         stopCamera()
+        val sessionId = ++cameraSessionId
 
         val textureEntry = textureRegistry.createSurfaceTexture()
         this.textureEntry = textureEntry
@@ -119,6 +171,15 @@ class NativeCameraPosePlugin :
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
+            if (sessionId != cameraSessionId) {
+                // Camera was stopped or restarted while ProcessCameraProvider was initializing.
+                try {
+                    textureEntry.release()
+                } catch (_: Throwable) {}
+                mainHandler.post { result.success(null) }
+                return@addListener
+            }
+
             try {
                 val provider = cameraProviderFuture.get()
                 this.cameraProvider = provider
@@ -135,16 +196,63 @@ class NativeCameraPosePlugin :
                     .build()
 
                 preview.setSurfaceProvider { request ->
+                    if (sessionId != cameraSessionId) {
+                        request.willNotProvideSurface()
+                        return@setSurfaceProvider
+                    }
+                    // Match CameraX's negotiated surface resolution to prevent Mali/Adreno blank frames.
+                    surfaceTexture.setDefaultBufferSize(
+                        request.resolution.width,
+                        request.resolution.height
+                    )
                     val surface = Surface(surfaceTexture)
                     request.provideSurface(surface, ContextCompat.getMainExecutor(context)) {
                         surface.release()
                     }
                 }
 
-                val lensFacing = if (lensFacingStr == "front") CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
-                val cameraSelector = CameraSelector.Builder()
-                    .requireLensFacing(lensFacing)
+                val preferredLens = if (lensFacingStr == "front") {
+                    CameraSelector.LENS_FACING_FRONT
+                } else {
+                    CameraSelector.LENS_FACING_BACK
+                }
+                val fallbackLens = if (preferredLens == CameraSelector.LENS_FACING_BACK) {
+                    CameraSelector.LENS_FACING_FRONT
+                } else {
+                    CameraSelector.LENS_FACING_BACK
+                }
+
+                val preferredSelector = CameraSelector.Builder()
+                    .requireLensFacing(preferredLens)
                     .build()
+                val fallbackSelector = CameraSelector.Builder()
+                    .requireLensFacing(fallbackLens)
+                    .build()
+
+                val cameraSelector = when {
+                    provider.hasCamera(preferredSelector) -> preferredSelector
+                    provider.hasCamera(fallbackSelector) -> fallbackSelector
+                    else -> {
+                        stopCamera()
+                        mainHandler.post {
+                            result.error("NO_CAMERA", "No camera available on this device", null)
+                        }
+                        return@addListener
+                    }
+                }
+
+                val lifecycleOwner = (activity as? LifecycleOwner) ?: (context as? LifecycleOwner)
+                if (lifecycleOwner == null) {
+                    stopCamera()
+                    mainHandler.post {
+                        result.error(
+                            "NO_LIFECYCLE",
+                            "Android Activity LifecycleOwner unavailable",
+                            null
+                        )
+                    }
+                    return@addListener
+                }
 
                 val imageAnalysis = ImageAnalysis.Builder()
                     .setTargetResolution(targetResolution)
@@ -164,14 +272,8 @@ class NativeCameraPosePlugin :
                     processImageProxy(imageProxy)
                 }
 
-                // Bind to lifecycle
-                val lifecycleOwner = (activity as? LifecycleOwner) ?: (context as? LifecycleOwner)
-                if (lifecycleOwner != null) {
-                    provider.unbindAll()
-                    provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis)
-                } else {
-                    provider.unbindAll()
-                }
+                provider.unbindAll()
+                provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis)
 
                 val reply = mapOf(
                     "textureId" to textureEntry.id(),
@@ -180,8 +282,12 @@ class NativeCameraPosePlugin :
                 )
                 mainHandler.post { result.success(reply) }
 
-            } catch (e: Exception) {
-                mainHandler.post { result.error("CAMERA_ERROR", e.message, null) }
+            } catch (t: Throwable) {
+                android.util.Log.e("PushGard", "startCamera failed", t)
+                stopCamera()
+                mainHandler.post {
+                    result.error("CAMERA_ERROR", t.message ?: t.javaClass.simpleName, null)
+                }
             }
         }, ContextCompat.getMainExecutor(context))
     }
@@ -261,10 +367,13 @@ class NativeCameraPosePlugin :
     }
 
     private fun stopCamera() {
+        cameraSessionId++
         try {
             cameraProvider?.unbindAll()
+        } catch (_: Throwable) {}
+        try {
             textureEntry?.release()
             textureEntry = null
-        } catch (_: Exception) {}
+        } catch (_: Throwable) {}
     }
 }

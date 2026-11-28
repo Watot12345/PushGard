@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -23,6 +24,10 @@ class FramingScreen extends StatefulWidget {
 class FramingScreenState extends State<FramingScreen> {
   final NativeCameraController _cameraController = NativeCameraController();
   bool _isCameraReady = false;
+  bool _handedOffToBattle = false;
+  String? _cameraError;
+  bool _permissionPermanentlyDenied = false;
+  String _lensFacing = 'back';
   PoseFrame? _lastFrame;
   StreamSubscription? _subscription;
 
@@ -36,25 +41,106 @@ class FramingScreenState extends State<FramingScreen> {
     _startCalibration();
   }
 
+  void _cancelPoseSubscription() {
+    final sub = _subscription;
+    _subscription = null;
+    if (sub != null) {
+      unawaited(sub.cancel().catchError((_) {}));
+    }
+  }
+
   Future<void> _startCalibration() async {
+    if (mounted) {
+      setState(() {
+        _cameraError = null;
+        _permissionPermanentlyDenied = false;
+      });
+    }
+
     try {
       final status = await Permission.camera.request();
-      if (!status.isGranted) return;
-
-      final textureId = await _cameraController.startCamera(
-        targetResolution: '480p',
-        lensFacing: 'back',
-      );
-
-      if (textureId != null && mounted) {
-        _subscription = _cameraController.poseStream.listen(_evaluateFraming);
+      if (!mounted) return;
+      if (!status.isGranted) {
         setState(() {
-          _isCameraReady = true;
+          _isCameraReady = false;
+          _permissionPermanentlyDenied = status.isPermanentlyDenied;
+          _cameraError = status.isPermanentlyDenied
+              ? 'Camera permission permanently denied. Enable it in App Settings.'
+              : 'Camera permission is required to verify your push-up form.';
         });
+        return;
       }
     } catch (_) {
-      // Hardware camera unavailable in current environment
+      // Headless unit test environments without permission_handler channel
     }
+
+    try {
+      _cancelPoseSubscription();
+      final textureId = await _cameraController.startCamera(
+        targetResolution: '480p',
+        lensFacing: _lensFacing,
+      );
+
+      if (!mounted) return;
+      if (textureId != null) {
+        _subscription = _cameraController.poseStream.listen(
+          _evaluateFraming,
+          onError: (_) {},
+        );
+        setState(() {
+          _isCameraReady = true;
+          _cameraError = null;
+        });
+      } else {
+        setState(() {
+          _isCameraReady = false;
+          _cameraError =
+              'Live camera tracking requires the Android APK. Download the latest release to train with live form checks.';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final String message;
+      if (e is MissingPluginException) {
+        message =
+            'Live camera tracking requires the Android APK. Download the latest release to train with live form checks.';
+      } else if (e is PlatformException) {
+        message = e.message ?? e.code;
+      } else {
+        message = e.toString();
+      }
+      setState(() {
+        _isCameraReady = false;
+        _cameraError = message;
+      });
+    }
+  }
+
+  Future<void> _toggleCameraLens() async {
+    setState(() {
+      _lensFacing = _lensFacing == 'back' ? 'front' : 'back';
+      _isCameraReady = false;
+      _lastFrame = null;
+    });
+    _cancelPoseSubscription();
+    await _cameraController.stopCamera();
+    await _startCalibration();
+  }
+
+  void _startBattleCountdown() {
+    _handedOffToBattle = true;
+    _cancelPoseSubscription();
+    // Enqueue stopCamera on the FIFO MethodChannel BEFORE BattleActiveScreen starts its camera,
+    // and prevent dispose() from stopping BattleActiveScreen's camera after transition.
+    unawaited(_cameraController.stopCamera());
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => BattleActiveScreen(
+          isBattle: widget.isBattle,
+          initialLensFacing: _lensFacing,
+        ),
+      ),
+    );
   }
 
   void _evaluateFraming(PoseFrame frame) {
@@ -124,7 +210,9 @@ class FramingScreenState extends State<FramingScreen> {
   @override
   void dispose() {
     _subscription?.cancel();
-    _cameraController.stopCamera();
+    if (!_handedOffToBattle) {
+      _cameraController.stopCamera();
+    }
     super.dispose();
   }
 
@@ -195,18 +283,78 @@ class FramingScreenState extends State<FramingScreen> {
                                 landmarks: _lastFrame!.landmarks,
                                 imageWidth: _lastFrame!.imageWidth,
                                 imageHeight: _lastFrame!.imageHeight,
+                                isFrontCamera: _lensFacing == 'front',
                               ),
                             ),
-                          Center(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 32),
-                              child: Text(
-                                'Camera preview: whole body inside the\nguide, seen from the side',
-                                textAlign: TextAlign.center,
-                                style: AppTypography.body(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 15,
+                          if (!_isCameraReady)
+                            Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _cameraError ??
+                                          'Camera preview: whole body inside the\nguide, seen from the side',
+                                      textAlign: TextAlign.center,
+                                      style: AppTypography.body(
+                                        color: _cameraError != null
+                                            ? AppColors.coralFix
+                                            : AppColors.textSecondary,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    if (_cameraError != null) ...[
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        alignment: WrapAlignment.center,
+                                        children: [
+                                          TextButton(
+                                            onPressed: _startCalibration,
+                                            child: Text(
+                                              'RETRY CAMERA',
+                                              style: AppTypography.telemetryCode(
+                                                color: AppColors.volt,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                          if (_permissionPermanentlyDenied)
+                                            TextButton(
+                                              onPressed: openAppSettings,
+                                              child: Text(
+                                                'OPEN SETTINGS',
+                                                style: AppTypography.telemetryCode(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Tooltip(
+                              message: 'Flip camera',
+                              child: Material(
+                                color: AppColors.background.withValues(alpha: 0.72),
+                                shape: const CircleBorder(),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.cameraswitch_rounded,
+                                    color: AppColors.volt,
+                                    size: 20,
+                                  ),
+                                  onPressed: _toggleCameraLens,
                                 ),
                               ),
                             ),
@@ -248,17 +396,7 @@ class FramingScreenState extends State<FramingScreen> {
                     ? ButtonVariant.primary
                     : ButtonVariant.secondary,
                 height: 58,
-                onPressed: _isReady
-                    ? () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => BattleActiveScreen(
-                              isBattle: widget.isBattle,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
+                onPressed: _isReady ? _startBattleCountdown : null,
               ),
               const SizedBox(height: 12),
               Center(

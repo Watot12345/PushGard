@@ -78,7 +78,9 @@ class NativeCameraController {
   }
 
   Future<void> stopCamera() async {
-    await _subscription?.cancel();
+    try {
+      await _subscription?.cancel();
+    } catch (_) {}
     _subscription = null;
     try {
       await _methodChannel.invokeMethod('stopCamera');

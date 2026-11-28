@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../../../core/audio/sound_cue_service.dart';
 import '../../../core/config/thresholds_config.dart';
 import '../../../core/kinematics/attempt_record_builder.dart';
 import '../../../core/kinematics/joint_angle_math.dart';
@@ -7,6 +10,7 @@ import '../../../core/network/pushgard_api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../spike/native_camera_controller.dart';
+import '../../../spike/skeleton_overlay_painter.dart';
 import 'attempt_summary_screen.dart';
 
 /// Matches Page 5 of `Pushgard — Logo & App Icon.pdf` combined with the
@@ -14,12 +18,14 @@ import 'attempt_summary_screen.dart';
 class BattleActiveScreen extends StatefulWidget {
   final bool isBattle;
   final BodySide initialBodySide;
+  final String initialLensFacing;
   final PushgardApiClient? apiClient;
 
   const BattleActiveScreen({
     super.key,
     this.isBattle = true,
     this.initialBodySide = BodySide.right,
+    this.initialLensFacing = 'back',
     this.apiClient,
   });
 
@@ -32,6 +38,8 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
   late final AttemptRecordBuilder _recordBuilder;
   StreamSubscription? _subscription;
   bool _isCameraReady = false;
+  String? _cameraError;
+  PoseFrame? _lastFrame;
   int? _attemptStartMonoMs;
 
   int _countdownSeconds = 3;
@@ -90,16 +98,54 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
     }
 
     try {
-      final textureId = await _cameraController.startCamera(
-        targetResolution: '480p',
-        lensFacing: 'back',
-      );
-      if (textureId != null && mounted) {
-        _subscription = _cameraController.poseStream.listen(_onPoseFrame);
-        setState(() => _isCameraReady = true);
+      final status = await Permission.camera.request();
+      if (!mounted) return;
+      if (!status.isGranted) {
+        setState(() {
+          _isCameraReady = false;
+          _cameraError = 'Camera permission denied';
+        });
+        return;
       }
     } catch (_) {
-      // Hardware camera unavailable; zero reps are awarded without live pose frames.
+      // Headless unit test environments without permission_handler channel
+    }
+
+    try {
+      final textureId = await _cameraController.startCamera(
+        targetResolution: '480p',
+        lensFacing: widget.initialLensFacing,
+      );
+      if (!mounted) return;
+      if (textureId != null) {
+        _subscription = _cameraController.poseStream.listen(
+          _onPoseFrame,
+          onError: (_) {},
+        );
+        setState(() {
+          _isCameraReady = true;
+          _cameraError = null;
+        });
+      } else {
+        setState(() {
+          _isCameraReady = false;
+          _cameraError = 'Camera returned no preview texture';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final String message;
+      if (e is MissingPluginException) {
+        message = 'Live camera tracking requires the Android APK.';
+      } else if (e is PlatformException) {
+        message = e.message ?? e.code;
+      } else {
+        message = e.toString();
+      }
+      setState(() {
+        _isCameraReady = false;
+        _cameraError = message;
+      });
     }
   }
 
@@ -113,6 +159,7 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
     );
     final smoothedElbow = _recordBuilder.detector.currentSmoothedElbow;
     setState(() {
+      _lastFrame = frame;
       if (smoothedElbow != null) {
         _currentElbowAngle = smoothedElbow;
       }
@@ -120,6 +167,7 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
         if (completedRep.valid) {
           _recordCleanRep();
         } else {
+          SoundCueService.instance.playFaultCue();
           _comboStreak = 0;
           _isCoachingWarning = true;
           if (completedRep.rejectReason == 'SHALLOW') {
@@ -158,15 +206,18 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
   }
 
   void _start321Countdown() {
+    SoundCueService.instance.playCountdownTick();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
       if (_countdownSeconds > 1) {
+        SoundCueService.instance.playCountdownTick();
         setState(() => _countdownSeconds--);
       } else {
         timer.cancel();
+        SoundCueService.instance.playGoCue();
         setState(() => _isCountdownActive = false);
         _startBattleTimer();
       }
@@ -197,6 +248,7 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
   }
 
   void _recordCleanRep() {
+    SoundCueService.instance.playValidRep();
     _validReps++;
     _comboStreak++;
     if (_comboStreak > _maxComboStreak) {
@@ -209,6 +261,7 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
   }
 
   void _recordShallowFault() {
+    SoundCueService.instance.playFaultCue();
     setState(() {
       _shallowReps++;
       _comboStreak = 0;
@@ -235,6 +288,7 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
   }) async {
     if (_hasFinished) return;
     _hasFinished = true;
+    SoundCueService.instance.playFinishCue();
     _countdownTimer?.cancel();
     _sessionTimer?.cancel();
     _subscription?.cancel();
@@ -337,7 +391,33 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 56),
+                        SizedBox(
+                          width: 56,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Tooltip(
+                              message: SoundCueService.instance.isMuted
+                                  ? 'Unmute sound cues'
+                                  : 'Mute sound cues',
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    SoundCueService.instance.toggleMute();
+                                  });
+                                },
+                                child: Icon(
+                                  SoundCueService.instance.isMuted
+                                      ? Icons.volume_off_rounded
+                                      : Icons.volume_up_rounded,
+                                  color: SoundCueService.instance.isMuted
+                                      ? AppColors.textMuted
+                                      : AppColors.volt,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                         Flexible(
                           child: Text(
                             'TIME LEFT',
@@ -459,13 +539,53 @@ class BattleActiveScreenState extends State<BattleActiveScreen> {
                             if (_isCameraReady &&
                                 _cameraController.textureId != null)
                               Texture(textureId: _cameraController.textureId!),
-                            Center(
-                              child: Text(
-                                'Live camera + skeleton\n(Elbow: ${_currentElbowAngle.toInt()}°)',
-                                textAlign: TextAlign.center,
-                                style: AppTypography.body(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 15,
+                            if (_lastFrame != null)
+                              CustomPaint(
+                                painter: SkeletonOverlayPainter(
+                                  landmarks: _lastFrame!.landmarks,
+                                  imageWidth: _lastFrame!.imageWidth,
+                                  imageHeight: _lastFrame!.imageHeight,
+                                  isFrontCamera:
+                                      widget.initialLensFacing == 'front',
+                                ),
+                              ),
+                            if (!_isCameraReady)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
+                                  child: Text(
+                                    _cameraError ??
+                                        'Live camera + skeleton\n(Elbow: ${_currentElbowAngle.toInt()}°)',
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.body(
+                                      color: _cameraError != null
+                                          ? AppColors.coralFix
+                                          : AppColors.textSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            Positioned(
+                              top: 10,
+                              left: 10,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.background
+                                      .withValues(alpha: 0.72),
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                                child: Text(
+                                  'ELBOW ${_currentElbowAngle.toInt()}°',
+                                  style: AppTypography.telemetryCode(
+                                    color: AppColors.volt,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                             ),

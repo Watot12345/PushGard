@@ -107,6 +107,17 @@ void main() {
     testWidgets('switches between EGO, KO WINS, and REPS leaderboard filters', (
       tester,
     ) async {
+      PlayerSessionStore.instance.applyAuthenticatedPlayer({
+        'handle': 'TEST_ATHLETE',
+        'provider': 'guest',
+        'is_guest': true,
+        'ego_rating': 1480,
+        'wins': 11,
+        'completed_matches': 14,
+        'ko_wins': 7,
+        'lifetime_valid_reps': 540,
+      });
+
       await tester.pumpWidget(const MaterialApp(home: HistoryScreen()));
       await tester.pumpAndSettle();
 
@@ -116,11 +127,11 @@ void main() {
 
       await tester.tap(find.text('KO WINS'));
       await tester.pumpAndSettle();
-      expect(find.text('29'), findsOneWidget);
+      expect(find.text('7'), findsOneWidget);
 
       await tester.tap(find.text('REPS'));
       await tester.pumpAndSettle();
-      expect(find.text('16200'), findsOneWidget);
+      expect(find.text('540'), findsOneWidget);
     });
   });
 

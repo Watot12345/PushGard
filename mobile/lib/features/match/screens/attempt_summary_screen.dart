@@ -45,11 +45,7 @@ class _AttemptSummaryScreenState extends State<AttemptSummaryScreen> {
   @override
   void initState() {
     super.initState();
-    _rivalFinalReps = widget.isBattle
-        ? (widget.opponentReps > 0
-            ? widget.opponentReps
-            : (widget.validReps > 3 ? widget.validReps - 3 : 12))
-        : 0;
+    _rivalFinalReps = widget.isBattle ? widget.opponentReps : 0;
 
     final store = PlayerSessionStore.instance;
     _eloDelta = store.recordAttemptOutcome(
@@ -179,7 +175,7 @@ class _AttemptSummaryScreenState extends State<AttemptSummaryScreen> {
                           child: Column(
                             children: [
                               Text(
-                                widget.isBattle ? '[CYBER_KONG]' : 'FAULTS',
+                                widget.isBattle ? 'OPPONENT' : 'FAULTS',
                                 style: AppTypography.body(
                                   color: AppColors.textSecondary,
                                   fontSize: 14,

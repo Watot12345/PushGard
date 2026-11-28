@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../config/thresholds_config.dart';
 
@@ -22,6 +26,28 @@ class BattleLogEntry {
     required this.egoDelta,
     required this.isPositive,
   });
+
+  Map<String, dynamic> toJson() => {
+        'opponent': opponent,
+        'date': date,
+        'valid_reps': validReps,
+        'opponent_reps': opponentReps,
+        'outcome': outcome,
+        'method': method,
+        'ego_delta': egoDelta,
+        'is_positive': isPositive,
+      };
+
+  factory BattleLogEntry.fromJson(Map<String, dynamic> json) => BattleLogEntry(
+        opponent: json['opponent'] as String? ?? 'RIVAL',
+        date: json['date'] as String? ?? 'Recent',
+        validReps: (json['valid_reps'] as num?)?.toInt() ?? 0,
+        opponentReps: (json['opponent_reps'] as num?)?.toInt() ?? 0,
+        outcome: json['outcome'] as String? ?? 'COMPLETE',
+        method: json['method'] as String? ?? '60s verified count',
+        egoDelta: json['ego_delta'] as String? ?? '+0 EGO',
+        isPositive: json['is_positive'] as bool? ?? true,
+      );
 }
 
 /// Reactive session state store so completing a battle or solo session updates
@@ -29,49 +55,20 @@ class BattleLogEntry {
 /// and the Ranks / Battle Log screens immediately.
 class PlayerSessionStore extends ChangeNotifier {
   static final PlayerSessionStore instance = PlayerSessionStore();
+  static const MethodChannel _storageChannel =
+      MethodChannel('com.pushgard/camera_pose');
 
-  String _handle = 'VANGUARD_01';
+  String _handle = 'ATHLETE';
   String _provider = 'local'; // local | guest | manual | google | facebook
   bool _isGuest = false;
-  int _egoRating = 1780;
-  int _battlesWon = 48;
-  int _totalBattles = 54;
-  int _koWins = 19;
-  int _lifetimeValidReps = 12480;
-  int _weeklyEgoDelta = 310;
+  int _egoRating = 1000;
+  int _battlesWon = 0;
+  int _totalBattles = 0;
+  int _koWins = 0;
+  int _lifetimeValidReps = 0;
+  int _weeklyEgoDelta = 0;
 
-  final List<BattleLogEntry> _battleHistory = [
-    const BattleLogEntry(
-      opponent: 'CYBER_KONG',
-      date: 'Today · 10:14 AM',
-      validReps: 42,
-      opponentReps: 27,
-      outcome: 'KO WIN',
-      method: '+15 rep lead Tug-of-War KO',
-      egoDelta: '+24 EGO',
-      isPositive: true,
-    ),
-    const BattleLogEntry(
-      opponent: 'MARCUS_FIT',
-      date: 'Yesterday · 19:40',
-      validReps: 41,
-      opponentReps: 38,
-      outcome: 'YOU WIN',
-      method: '60s verified count',
-      egoDelta: '+19 EGO',
-      isPositive: true,
-    ),
-    const BattleLogEntry(
-      opponent: 'APEX_REAPER',
-      date: '09 Nov · 18:15',
-      validReps: 33,
-      opponentReps: 39,
-      outcome: 'YOU LOSE',
-      method: '60s verified count',
-      egoDelta: '-16 EGO',
-      isPositive: false,
-    ),
-  ];
+  final List<BattleLogEntry> _battleHistory = [];
 
   String get handle => _handle;
   String get provider => _provider;
@@ -84,6 +81,69 @@ class PlayerSessionStore extends ChangeNotifier {
   int get weeklyEgoDelta => _weeklyEgoDelta;
   List<BattleLogEntry> get battleHistory => List.unmodifiable(_battleHistory);
 
+  Map<String, dynamic> toJson() => {
+        'handle': _handle,
+        'provider': _provider,
+        'is_guest': _isGuest,
+        'ego_rating': _egoRating,
+        'battles_won': _battlesWon,
+        'total_battles': _totalBattles,
+        'ko_wins': _koWins,
+        'lifetime_valid_reps': _lifetimeValidReps,
+        'weekly_ego_delta': _weeklyEgoDelta,
+        'battle_history': _battleHistory.map((e) => e.toJson()).toList(),
+      };
+
+  void loadFromJson(Map<String, dynamic> json) {
+    _handle = json['handle'] as String? ?? _handle;
+    _provider = json['provider'] as String? ?? _provider;
+    _isGuest = json['is_guest'] as bool? ?? _isGuest;
+    _egoRating = (json['ego_rating'] as num?)?.toInt() ?? _egoRating;
+    _battlesWon = (json['battles_won'] as num?)?.toInt() ?? _battlesWon;
+    _totalBattles = (json['total_battles'] as num?)?.toInt() ?? _totalBattles;
+    _koWins = (json['ko_wins'] as num?)?.toInt() ?? _koWins;
+    _lifetimeValidReps =
+        (json['lifetime_valid_reps'] as num?)?.toInt() ?? _lifetimeValidReps;
+    _weeklyEgoDelta =
+        (json['weekly_ego_delta'] as num?)?.toInt() ?? _weeklyEgoDelta;
+    final rawHistory = json['battle_history'] as List<dynamic>?;
+    if (rawHistory != null) {
+      _battleHistory
+        ..clear()
+        ..addAll(
+          rawHistory
+              .whereType<Map<String, dynamic>>()
+              .map(BattleLogEntry.fromJson),
+        );
+    }
+    _notifySafely();
+  }
+
+  /// Loads persisted session state from native app-private storage when available.
+  Future<void> loadFromDisk() async {
+    if (kIsWeb) return;
+    try {
+      final raw = await _storageChannel
+          .invokeMethod<String>('readSessionJson')
+          .timeout(const Duration(seconds: 2));
+      if (raw != null && raw.isNotEmpty) {
+        final decoded = jsonDecode(raw) as Map<String, dynamic>;
+        loadFromJson(decoded);
+      }
+    } catch (_) {
+      // Headless tests or first launch without saved session
+    }
+  }
+
+  void _persistToDisk() {
+    if (kIsWeb) return;
+    unawaited(
+      _storageChannel
+          .invokeMethod<void>('writeSessionJson', {'json': jsonEncode(toJson())})
+          .catchError((_) {}),
+    );
+  }
+
   void applyAuthenticatedPlayer(Map<String, dynamic> player) {
     _handle = player['handle'] as String? ?? _handle;
     _provider = player['provider'] as String? ?? 'manual';
@@ -93,6 +153,7 @@ class PlayerSessionStore extends ChangeNotifier {
     _totalBattles = (player['completed_matches'] as num?)?.toInt() ?? 0;
     _koWins = (player['ko_wins'] as num?)?.toInt() ?? 0;
     _lifetimeValidReps = (player['lifetime_valid_reps'] as num?)?.toInt() ?? 0;
+    _persistToDisk();
     _notifySafely();
   }
 
@@ -108,49 +169,16 @@ class PlayerSessionStore extends ChangeNotifier {
   }
 
   void resetForTesting() {
-    _handle = 'VANGUARD_01';
+    _handle = 'ATHLETE';
     _provider = 'local';
     _isGuest = false;
-    _egoRating = 1780;
-    _battlesWon = 48;
-    _totalBattles = 54;
-    _koWins = 19;
-    _lifetimeValidReps = 12480;
-    _weeklyEgoDelta = 310;
-    _battleHistory
-      ..clear()
-      ..addAll(const [
-        BattleLogEntry(
-          opponent: 'CYBER_KONG',
-          date: 'Today · 10:14 AM',
-          validReps: 42,
-          opponentReps: 27,
-          outcome: 'KO WIN',
-          method: '+15 rep lead Tug-of-War KO',
-          egoDelta: '+24 EGO',
-          isPositive: true,
-        ),
-        BattleLogEntry(
-          opponent: 'MARCUS_FIT',
-          date: 'Yesterday · 19:40',
-          validReps: 41,
-          opponentReps: 38,
-          outcome: 'YOU WIN',
-          method: '60s verified count',
-          egoDelta: '+19 EGO',
-          isPositive: true,
-        ),
-        BattleLogEntry(
-          opponent: 'APEX_REAPER',
-          date: '09 Nov · 18:15',
-          validReps: 33,
-          opponentReps: 39,
-          outcome: 'YOU LOSE',
-          method: '60s verified count',
-          egoDelta: '-16 EGO',
-          isPositive: false,
-        ),
-      ]);
+    _egoRating = 1000;
+    _battlesWon = 0;
+    _totalBattles = 0;
+    _koWins = 0;
+    _lifetimeValidReps = 0;
+    _weeklyEgoDelta = 0;
+    _battleHistory.clear();
     _notifySafely();
   }
 
@@ -161,13 +189,14 @@ class PlayerSessionStore extends ChangeNotifier {
     required int opponentReps,
     required bool isKnockout,
     required bool isForfeit,
-    String opponentName = 'CYBER_KONG',
-    int opponentEgo = 1795,
+    String opponentName = 'OPPONENT',
+    int opponentEgo = 1000,
   }) {
     final cfg = ThresholdsConfig.instance;
     _lifetimeValidReps += validReps;
 
     if (!isBattle) {
+      _persistToDisk();
       _notifySafely();
       return 0;
     }
@@ -228,6 +257,7 @@ class PlayerSessionStore extends ChangeNotifier {
       ),
     );
 
+    _persistToDisk();
     _notifySafely();
     return eloDelta;
   }

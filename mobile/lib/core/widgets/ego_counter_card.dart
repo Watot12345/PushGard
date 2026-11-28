@@ -18,11 +18,11 @@ class EgoCounterCard extends StatefulWidget {
   const EgoCounterCard({
     super.key,
     required this.egoScore,
-    this.battlesWon = 48,
-    this.totalBattles = 54,
-    this.koWins = 19,
-    this.lifetimeValidReps = 12480,
-    this.weeklyDelta = 310,
+    this.battlesWon = 0,
+    this.totalBattles = 0,
+    this.koWins = 0,
+    this.lifetimeValidReps = 0,
+    this.weeklyDelta = 0,
     this.onTap,
   });
 

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'app_shell.dart';
 import 'core/config/thresholds_config.dart';
+import 'core/state/player_session_store.dart';
 import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
@@ -12,6 +13,7 @@ Future<void> main() async {
         FlutterError.presentError(details);
       };
       await ThresholdsConfig.loadFromAsset();
+      await PlayerSessionStore.instance.loadFromDisk();
       runApp(const PushGardApp());
     },
     (error, stack) {

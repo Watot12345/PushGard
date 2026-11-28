@@ -112,7 +112,7 @@ class RankShieldCrest extends StatelessWidget {
 
   const RankShieldCrest({
     super.key,
-    this.egoScore = 1780,
+    this.egoScore = 1000,
     this.size = 36,
     this.inverted = false,
   });
